@@ -209,7 +209,7 @@
     <div class="card">
       <span class="kicker">内部功能</span>
       <div class="center" style="margin-top:4px;">
-        <button class="btn ghost block" id="btn-admin" type="button">招聘方入口 · 按测试码查答卷</button>
+        <button class="btn ghost block" id="btn-admin" type="button">招聘方入口 · 查看答卷汇总</button>
       </div>
     </div>
   </section>
@@ -343,28 +343,6 @@
       <div class="msg ok" id="copy-msg">已复制到剪贴板。</div>
     </div>
     <p class="footer">本测试用于音频标注岗位人力筛选 · 每位候选人题目组合随机生成</p>
-  </section>
-
-  <!-- ===== 招聘方查询（内部批改用） ===== -->
-  <section id="view-admin" class="view">
-    <div class="card">
-      <div class="q-head" style="align-items:center;">
-        <span class="kicker">招聘方内部 · 人工批改</span>
-        <button class="btn ghost" id="btn-admin-back" type="button" style="padding:8px 14px;font-size:13px;">← 返回首页</button>
-      </div>
-      <h2 style="margin-top:6px;">按测试码查询答卷</h2>
-      <p class="sub">输入候选人的测试码，查看其完整作答（含第一部分每题明细、第二三部分听感与曲式分析）。</p>
-      <div class="field" style="margin-top:14px;">
-        <label for="admin-code">测试码</label>
-        <input class="input" id="admin-code" type="text" placeholder="例如：59STP" maxlength="12" autocomplete="off">
-      </div>
-      <div class="center" style="margin-top:12px;">
-        <button class="btn block" id="btn-admin-query" type="button">查询答卷</button>
-      </div>
-      <div class="msg" id="admin-msg"></div>
-    </div>
-    <div id="admin-result"></div>
-    <p class="footer">招聘方内部使用 · 数据来自飞书汇总表（每人仅限一次提交）</p>
   </section>
 
 </main>
@@ -870,39 +848,10 @@ document.getElementById("btn-submit-resume").addEventListener("click",function()
   msg("landing-msg",true);
 });
 
-/* ===== 招聘方查询：按测试码查答卷（内部批改用） ===== */
-var ADMIN_API = ""; // 后端部署后填写，如 https://xxx.vercel.app/api/result
-
-function renderAdmin(d){
-  var box=document.getElementById("admin-result");
-  if(!d||d.ok===false){
-    box.innerHTML='<div class="card"><div class="msg show">'+(d&&d.msg?esc(d.msg):"未找到该测试码，请检查是否输入正确。")+'</div></div>';
-    return;
-  }
-  var r=d.record||{};
-  var name=esc(r["姓名"]||""), code=esc(r["测试码"]||""), contact=esc(r["联系方式"]||""), t=esc(r["提交时间"]||""), txt=esc(r["测试结果"]||"");
-  var html='<div class="card"><span class="kicker">答卷 · '+code+'</span>';
-  html+='<h2 style="margin-top:6px;">'+name+'</h2>';
-  html+='<p class="sub">测试码：'+code+' ｜ 联系方式：'+contact+' ｜ 提交时间：'+t+'</p></div>';
-  if(txt){ html+='<div class="card"><h2>完整答卷</h2><textarea class="txtout" readonly style="height:auto;min-height:320px;">'+txt+'</textarea></div>'; }
-  else { html+='<div class="card"><div class="msg show">该记录暂无“测试结果”内容（可能提交时未包含答卷）。</div></div>'; }
-  box.innerHTML=html;
-}
-document.getElementById("btn-admin").addEventListener("click",function(){ show("view-admin"); document.getElementById("admin-code").focus(); });
-document.getElementById("btn-admin-back").addEventListener("click",function(){ show("view-landing"); });
-document.getElementById("btn-admin-query").addEventListener("click",function(){
-  var code=document.getElementById("admin-code").value.trim();
-  var msgEl=document.getElementById("admin-msg"), box=document.getElementById("admin-result");
-  msgEl.classList.remove("show"); box.innerHTML="";
-  if(!code){ msgEl.textContent="请输入测试码。"; msgEl.classList.add("show"); return; }
-  if(!ADMIN_API){ box.innerHTML='<div class="card"><div class="msg show">查询后端尚未配置：需要创建飞书自建应用并提供 App ID/Secret 后部署查询接口，届时在此启用。</div></div>'; return; }
-  msgEl.textContent="查询中…"; msgEl.classList.add("show");
-  fetch(ADMIN_API+"?code="+encodeURIComponent(code),{headers:{"Accept":"application/json"}})
-    .then(function(r){ return r.json(); })
-    .then(function(d){ msgEl.classList.remove("show"); renderAdmin(d); })
-    .catch(function(){ msgEl.classList.remove("show"); box.innerHTML='<div class="card"><div class="msg show">查询失败：无法连接后端，请稍后重试。</div></div>'; });
+/* ===== 招聘方入口：直接打开飞书汇总表（无后端） ===== */
+document.getElementById("btn-admin").addEventListener("click",function(){
+  window.open("https://g0iocpiqvf9.feishu.cn/base/HMi9bm2LaaJkrOsX6SCctKb6nGg","_blank");
 });
-document.getElementById("admin-code").addEventListener("keydown",function(e){ if(e.key==="Enter") document.getElementById("btn-admin-query").click(); });
 
 </script>
 </body>
