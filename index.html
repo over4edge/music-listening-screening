@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音频听辨能力筛选测试</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap">
+<style>
+  :root{
+    --bg:#12161c;
+    --surface:#1b222b;
+    --surface2:#222b36;
+    --line:#313d4a;
+    --ink:#ece6da;
+    --muted:#98a2ad;
+    --signal:#e8a33d;
+    --signal-soft:#f4c46d;
+    --ok:#6fbf8a;
+    --bad:#d96a5a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .shell{max-width:720px;margin:0 auto;padding:0 20px 64px;}
+  header.apphead{padding:26px 20px 10px;text-align:center;}
+  .brand{display:flex;align-items:center;justify-content:center;gap:10px;}
+  .brand .logo{width:38px;height:38px;border-radius:10px;background:var(--signal);display:flex;align-items:center;justify-content:center;flex:none;}
+  .brand .logo svg{width:22px;height:22px;stroke:#12161c;}
+  .brand h1{font-size:19px;font-weight:900;letter-spacing:.5px;}
+  .apphead p{color:var(--muted);font-size:13px;margin-top:6px;}
+  .view{display:none;}
+  .view.active{display:block;animation:fadein .35s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-top:18px;}
+  .card h2{font-size:17px;font-weight:700;}
+  .card .sub{color:var(--muted);font-size:13px;margin-top:4px;}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--signal);color:#12161c;font-weight:700;font-size:12px;padding:3px 10px;border-radius:999px;}
+  .kicker{color:var(--signal);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+  .hero{text-align:center;padding:26px 6px 4px;}
+  .hero h2{font-size:26px;font-weight:900;line-height:1.35;}
+  .hero .desc{color:var(--muted);font-size:14px;max-width:540px;margin:14px auto 0;}
+  .rulebox{background:var(--surface2);border:1px dashed var(--line);border-radius:12px;padding:16px 18px;margin:20px auto 0;max-width:540px;text-align:left;font-size:13.5px;}
+  .rulebox b{color:var(--signal-soft);}
+  .rulebox li{margin:6px 0 6px 18px;color:#d8d2c6;}
+  .field{margin-top:18px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px;}
+  .input{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:15px;padding:12px 14px;font-family:inherit;}
+  .input:focus{outline:none;border-color:var(--signal);}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--signal);color:#12161c;font-weight:700;font-size:15px;border:none;border-radius:12px;padding:14px 26px;cursor:pointer;transition:transform .08s ease,background .15s ease;font-family:inherit;}
+  .btn:hover{background:var(--signal-soft);}
+  .btn:active{transform:scale(.98);}
+  .btn.block{width:100%;}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  .btn.ghost:hover{background:var(--surface2);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .center{text-align:center;}
+  .hint{color:var(--muted);font-size:12.5px;margin-top:10px;}
+  .player{display:flex;align-items:center;gap:14px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:16px 0 14px;}
+  .play-btn{width:48px;height:48px;flex:none;border-radius:50%;border:none;background:var(--signal);color:#12161c;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .08s ease;}
+  .play-btn:hover{background:var(--signal-soft);}
+  .play-btn:active{transform:scale(.94);}
+  .play-btn svg{width:22px;height:22px;}
+  .eq{display:flex;align-items:flex-end;gap:4px;height:26px;flex:none;}
+  .eq span{width:5px;background:var(--signal);border-radius:2px;height:6px;transition:height .1s ease;}
+  .player.playing .eq span{animation:eq .9s ease-in-out infinite;}
+  .player.playing .eq span:nth-child(1){animation-delay:.0s;}
+  .player.playing .eq span:nth-child(2){animation-delay:.15s;}
+  .player.playing .eq span:nth-child(3){animation-delay:.3s;}
+  .player.playing .eq span:nth-child(4){animation-delay:.45s;}
+  .player.playing .eq span:nth-child(5){animation-delay:.6s;}
+  @keyframes eq{0%,100%{height:6px;}50%{height:26px;}}
+  .pmeta{flex:1;min-width:0;}
+  .plabel{font-size:12px;color:var(--muted);}
+  .prog{height:4px;background:#313d4a;border-radius:2px;margin-top:8px;overflow:hidden;}
+  .prog-fill{height:100%;width:0;background:var(--signal);border-radius:2px;}
+  .ptime{font-size:11px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums;}
+  .q-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:18px;}
+  .q-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .q-index{width:32px;height:32px;flex:none;border-radius:9px;background:var(--signal);color:#12161c;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .q-title{font-size:15.5px;font-weight:700;flex:1;}
+  .opt{display:block;width:100%;text-align:left;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:11px;padding:13px 15px;margin-top:10px;font-size:14.5px;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s;}
+  .opt:hover{border-color:var(--signal);}
+  .opt.sel{border-color:var(--signal);background:rgba(232,163,61,.12);}
+  .opt .optkey{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.06);font-size:12px;font-weight:700;margin-right:10px;color:var(--signal-soft);}
+  .opt.sel .optkey{background:var(--signal);color:#12161c;}
+  .score-ring{width:150px;height:150px;border-radius:50%;margin:18px auto;display:flex;flex-direction:column;align-items:center;justify-content:center;border:6px solid var(--line);position:relative;}
+  .score-ring .num{font-size:40px;font-weight:900;line-height:1;}
+  .score-ring .lbl{font-size:12px;color:var(--muted);margin-top:4px;}
+  .score-ring.pass{border-color:var(--ok);}
+  .score-ring.fail{border-color:var(--bad);}
+  .verdict{text-align:center;font-size:17px;font-weight:700;margin-top:6px;}
+  .verdict.pass{color:var(--ok);}
+  .verdict.fail{color:var(--bad);}
+  .result-item{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;}
+  .result-item h3{font-size:14px;color:var(--signal-soft);}
+  .result-item .rtxt{font-size:13.5px;color:#d8d2c6;margin-top:6px;white-space:pre-wrap;}
+  .result-item .rmeta{font-size:12px;color:var(--muted);margin-top:4px;}
+  .codebox{background:var(--surface2);border:1px dashed var(--line);border-radius:12px;padding:14px 16px;text-align:center;margin-top:16px;}
+  .codebox .code{font-size:30px;font-weight:900;letter-spacing:6px;color:var(--signal-soft);font-variant-numeric:tabular-nums;}
+  .txtout{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:12px;color:var(--ink);font-size:13px;padding:14px;margin-top:14px;min-height:140px;font-family:inherit;white-space:pre-wrap;}
+  .msg{display:none;background:rgba(217,106,90,.14);border:1px solid var(--bad);color:#f2b8ae;border-radius:10px;padding:11px 14px;font-size:13px;margin-top:14px;}
+  .msg.show{display:block;}
+  .msg.ok{background:rgba(111,191,138,.12);border-color:var(--ok);color:#bce7cb;}
+  textarea.input{min-height:104px;resize:vertical;}
+  .filebox{display:flex;align-items:center;gap:12px;background:var(--surface2);border:1px dashed var(--line);border-radius:11px;padding:12px 14px;}
+  .filebox .fname{flex:1;min-width:0;font-size:13.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .filebox .fname.has{color:var(--ink);}
+  .file-btn{background:transparent;border:1px solid var(--signal);color:var(--signal-soft);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex:none;}
+  .file-btn:hover{background:rgba(232,163,61,.12);}
+  .footer{margin-top:34px;text-align:center;color:#5d6874;font-size:12px;}
+  .steps{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+  .step{display:flex;gap:12px;align-items:flex-start;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:13px 15px;}
+  .step .n{width:26px;height:26px;flex:none;border-radius:8px;background:var(--signal);color:#12161c;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .step .t{font-size:13.5px;}
+  .step .t b{display:block;font-size:14.5px;}
+  .p2note{font-size:12.5px;color:var(--muted);}
+  .spec-sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .spec-wrap{position:relative;margin-top:12px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px 14px 6px;}
+  .spec-canvas{display:block;width:100%;height:120px;touch-action:none;cursor:crosshair;border-radius:8px;background:#141a21;}
+  .spec-ticks{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);padding:4px 2px 0;font-variant-numeric:tabular-nums;}
+  .spec-labels{margin-top:10px;display:flex;flex-direction:column;gap:7px;}
+  .spec-pending{background:rgba(232,163,61,.10);border:1px solid var(--signal);border-radius:11px;padding:12px 14px;}
+  .spec-pending .ptime{font-size:13px;color:var(--signal-soft);font-weight:700;margin-top:0;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .chip{background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit;}
+  .chip:hover{border-color:var(--signal);color:var(--signal-soft);}
+  .pendrow{display:flex;gap:8px;margin-top:10px;}
+  .pendinp{flex:1;padding:9px 12px;font-size:13.5px;}
+  .pendok{flex:none;padding:9px 18px;font-size:13.5px;}
+  .seg-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;}
+  .seg-item .dot{width:12px;height:12px;flex:none;border-radius:3px;}
+  .seg-item .seg-txt{flex:1;min-width:0;font-size:13.5px;color:#e4ded2;}
+  .seg-del{flex:none;width:26px;height:26px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;font-family:inherit;}
+  .seg-del:hover{color:var(--bad);background:rgba(217,106,90,.12);}
+  .seg-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:4px 0;}
+  @media (max-width:480px){
+    .shell{padding:0 14px 48px;}
+    .hero h2{font-size:22px;}
+    .card{padding:18px;}
+    .player{padding:10px 12px;gap:12px;}
+    .play-btn{width:44px;height:44px;}
+  }
+</style>
+</head>
+<body>
+<header class="apphead">
+  <div class="brand">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>
+    </div>
+    <h1>音频听辨筛选</h1>
+  </div>
+  <p>听辨能力 · 硬门槛 · 每人随机抽题</p>
+</header>
+
+<main class="shell">
+
+  <!-- ===== 首页：简历递交窗口 ===== -->
+  <section id="view-landing" class="view active">
+    <div class="hero">
+      <span class="kicker">Listening Screening</span>
+      <h2>音频听辨能力<br>人力筛选测试</h2>
+      <p class="desc">测试你的耳朵：听辨乐器、音色、音效、人声与音乐风格，并判断真实歌曲的整体听感与曲式结构。题目为每人随机抽取，请独立完成。</p>
+    </div>
+    <div class="card">
+      <span class="kicker">报名与简历</span>
+      <h2 style="margin-top:6px;">先递交报名信息</h2>
+      <div class="field">
+        <label for="name-input">姓名 / 编号 *</label>
+        <input class="input" id="name-input" type="text" placeholder="例如：张三 / NM-0001" maxlength="30" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="contact-input">联系方式（电话 / 微信 / 邮箱）</label>
+        <input class="input" id="contact-input" type="text" placeholder="用于招聘方联系你" maxlength="60" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>简历</label>
+        <div class="filebox">
+          <span class="fname" id="resume-name">未选择简历文件</span>
+          <button type="button" class="file-btn" id="btn-pick-resume">选择文件</button>
+          <input type="file" id="resume-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" hidden>
+        </div>
+        <p class="hint">完成测试后，在结果页点击「一键提交到汇总表」，报名信息、测试结果会自动填好，届时上传简历即可（每人仅限提交一次）。</p>
+      </div>
+      <div class="center" style="margin-top:14px;">
+        <button class="btn ghost block" id="btn-submit-resume" type="button" disabled>完成测试后 · 结果页一键提交</button>
+      </div>
+      <div class="msg" id="landing-msg">请先填写姓名/编号。</div>
+    </div>
+    <div class="card">
+      <span class="kicker">测试流程</span>
+      <h2 style="margin-top:6px;">三个部分</h2>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div class="t"><b>听辨硬门槛</b>8 道听辨选择题（乐器 / 音效 / 人声 / 风格），提交后自动判分，达到通过线才能继续。</div></div>
+        <div class="step"><div class="n">2</div><div class="t"><b>整体听感判断</b>随机 5 首歌曲片段（约 30 秒），试听后写出整体音乐判断（风格 / 配器 / 音色 / 节奏 / 氛围）。</div></div>
+        <div class="step"><div class="n">3</div><div class="t"><b>曲式结构分析</b>随机 2 首歌曲（约 60 秒），在频谱上框选段落区间并命名，完成曲式分析。</div></div>
+      </div>
+      <div class="center" style="margin-top:22px;">
+        <button class="btn block" id="btn-start" type="button">进入测试</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 第一部分 ===== -->
+  <section id="view-part1" class="view">
+    <div class="card">
+      <span class="kicker">Part 1 · 听辨硬门槛</span>
+      <h2 style="margin-top:6px;">听辨选择题</h2>
+      <p class="sub">共 <span id="p1-total">0</span> 题。点击播放音频，选择最符合的答案。<b style="color:var(--signal-soft);">达到通过线（70%）才能进入下一部分</b>。</p>
+      <div class="msg" id="part1-msg">还有题目未作答，请完成后再提交。</div>
+    </div>
+    <div id="p1-list"></div>
+    <div class="center" style="margin-top:22px;">
+      <button class="btn block" id="btn-p1-submit" type="button">提交第一部分</button>
+    </div>
+  </section>
+
+  <!-- ===== 第一部分结果 ===== -->
+  <section id="view-part1result" class="view">
+    <div class="card center">
+      <span class="kicker">Part 1 · 结果</span>
+      <div class="score-ring" id="p1-ring">
+        <div class="num" id="p1-num">0/0</div>
+        <div class="lbl">第一部分得分</div>
+      </div>
+      <div class="verdict" id="p1-verdict"></div>
+      <p class="desc" id="p1-verdict-sub" style="max-width:480px;margin:12px auto 0;"></p>
+    </div>
+    <div id="p1-result-body"></div>
+    <div class="center" style="margin-top:22px;" id="p1-next-wrap"></div>
+  </section>
+
+  <!-- ===== 第二部分引导 ===== -->
+  <section id="view-part2intro" class="view">
+    <div class="card">
+      <span class="kicker">Part 2 · 整体听感</span>
+      <h2 style="margin-top:6px;">歌曲整体听感描述</h2>
+      <p class="sub">系统为你随机抽取 <span id="p2-count">0</span> 首歌曲片段（每段约 30 秒）。请戴上耳机，每首试听后写下<b style="color:var(--signal-soft);">整体判断</b>。</p>
+      <div class="rulebox">
+        <b>描述要点（参考）</b>
+        <ul>
+          <li><b>音乐风格</b>：流行 / 说唱 / R&amp;B / 电子 / 古典 / 爵士 / 民谣 / 国风……</li>
+          <li><b>主要配器</b>：钢琴 / 吉他 / 弦乐 / 鼓 / 贝斯 / 合成器……</li>
+          <li><b>音色质感</b>：明亮 / 浑厚 / 清脆 / 空灵 / 沙哑……</li>
+          <li><b>节奏速度</b>：快 / 中 / 慢，鼓点是否明显</li>
+          <li><b>情绪氛围</b>：欢乐 / 紧张 / 舒缓 / 忧伤……</li>
+        </ul>
+      </div>
+      <div class="center" style="margin-top:24px;">
+        <button class="btn" id="btn-p2-start" type="button">开始第二部分</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 第二部分 ===== -->
+  <section id="view-part2" class="view">
+    <div class="card">
+      <span class="kicker">Part 2 · 整体听感</span>
+      <h2 style="margin-top:6px;">逐首试听并描述</h2>
+      <p class="sub">共 <span id="p2-total">0</span> 首，每题至少 15 字。</p>
+      <div class="msg" id="part2-msg">请补全未完成的描述（每首至少 15 字）。</div>
+    </div>
+    <div id="p2-list"></div>
+    <div class="center" style="margin-top:22px;">
+      <button class="btn block" id="btn-p2-submit" type="button">进入第三部分</button>
+    </div>
+  </section>
+
+  <!-- ===== 第三部分引导 ===== -->
+  <section id="view-part3intro" class="view">
+    <div class="card">
+      <span class="kicker">Part 3 · 曲式结构</span>
+      <h2 style="margin-top:6px;">歌曲结构判断与曲式分析</h2>
+      <p class="sub">系统为你随机抽取 <span id="p3-count">0</span> 首歌（每段约 60 秒，覆盖多个段落）。请在<b style="color:var(--signal-soft);">音频频谱</b>上框选时间区间、为每个段落命名，完成曲式分析。</p>
+      <div class="rulebox">
+        <b>任务说明</b>
+        <ul>
+          <li>完整试听片段，观察频谱能量变化与段落切换。</li>
+          <li>在频谱上<b>按住拖动</b>框选一段音频区间，为它填写<b>结构名称</b>（如 前奏 / 主歌 / 副歌 / 间奏 / 尾奏）。</li>
+          <li>对片段中的每个明显段落都做一次标注，最终自动组成<b>曲式结构序列</b>（如：前奏 → 主歌 → 副歌 → 间奏 → 副歌 → 尾奏）。</li>
+        </ul>
+      </div>
+      <div class="center" style="margin-top:24px;">
+        <button class="btn" id="btn-p3-start" type="button">开始第三部分</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 第三部分 ===== -->
+  <section id="view-part3" class="view">
+    <div class="card">
+      <span class="kicker">Part 3 · 曲式结构</span>
+      <h2 style="margin-top:6px;">频谱标注 · 曲式分析</h2>
+      <p class="sub">共 <span id="p3-total">0</span> 首。每首至少标注 <span id="p3-minseg">2</span> 个段落区间并命名。</p>
+      <div class="msg" id="part3-msg">请补全未完成的频谱区间标注。</div>
+    </div>
+    <div id="p3-list"></div>
+    <div class="center" style="margin-top:22px;">
+      <button class="btn block" id="btn-p3-submit" type="button">完成测试并生成结果</button>
+    </div>
+  </section>
+
+  <!-- ===== 结果 ===== -->
+  <section id="view-result" class="view">
+    <div class="card center">
+      <span class="kicker">测试完成</span>
+      <h2 style="margin-top:6px;">结果摘要</h2>
+      <div class="codebox">
+        <div style="font-size:12px;color:var(--muted);">我的测试码（用于核对身份）</div>
+        <div class="code" id="result-code">------</div>
+      </div>
+      <div class="score-ring" id="final-ring" style="margin-top:22px;">
+        <div class="num" id="final-num">0%</div>
+        <div class="lbl">第一部分得分率</div>
+      </div>
+      <div class="verdict" id="final-verdict"></div>
+      <div class="center" style="margin-top:18px;">
+        <button class="btn block" id="btn-submit-all" type="button">一键提交到汇总表</button>
+      </div>
+      <p class="hint">点击后打开招聘方汇总表，报名信息与测试码已自动填写，请上传简历并点击提交，结果将自动汇总。</p>
+    </div>
+    <div id="result-body"></div>
+    <div class="card">
+      <h2>复制结果文本</h2>
+      <p class="sub">也可以把下面文本复制后发送给招聘对接人。</p>
+      <textarea class="txtout" id="result-txt" readonly></textarea>
+      <div class="center" style="margin-top:16px;">
+        <button class="btn ghost" id="btn-copy" type="button">复制结果</button>
+      </div>
+      <div class="msg ok" id="copy-msg">已复制到剪贴板。</div>
+    </div>
+    <p class="footer">本测试用于音频标注岗位人力筛选 · 每位候选人题目组合随机生成</p>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+ * 题库数据
+ * ============================================================ */
+// ---- 第一部分：针对性听辨片段（答案可控）----
+var PART1 = [
+  { url:"https://aka.doubaocdn.com/s/iXJJnal3LL", q:"这段音频中，你听到的主要乐器是？",
+    opts:["钢琴","小提琴","长笛","古筝","电子合成器"], ans:"钢琴" },
+  { url:"https://aka.doubaocdn.com/s/V7ClsU51WF", q:"这段音频中，你听到的主要乐器是？",
+    opts:["大提琴","木吉他","架子鼓","钢琴","长笛"], ans:"大提琴" },
+  { url:"https://aka.doubaocdn.com/s/zH2O4xtDqZ", q:"这段音频中，你听到的主要乐器是？",
+    opts:["小提琴","大提琴","长笛","钢琴","古筝"], ans:"小提琴" },
+  { url:"https://aka.doubaocdn.com/s/2zDVEucsFl", q:"这段音频中，你听到的主要乐器是？",
+    opts:["木吉他","电子合成器","架子鼓","大提琴","钢琴"], ans:"木吉他" },
+  { url:"https://aka.doubaocdn.com/s/sr8yfNaoZK", q:"这段音频中，你听到的主要乐器是？",
+    opts:["架子鼓","钢琴","电子合成器","长笛","古筝"], ans:"架子鼓" },
+  { url:"https://aka.doubaocdn.com/s/4xW8Ij9KYF", q:"这段音频中，你听到的主要乐器是？",
+    opts:["电子合成器","木吉他","大提琴","古筝","长笛"], ans:"电子合成器" },
+  { url:"https://aka.doubaocdn.com/s/nG7r4o1tTE", q:"这段音频中，你听到的主要乐器是？",
+    opts:["古筝","钢琴","小提琴","电子合成器","架子鼓"], ans:"古筝" },
+  { url:"https://aka.doubaocdn.com/s/CZUhuOE1OP", q:"这段音频中，你听到的主要乐器是？",
+    opts:["长笛","古筝","小提琴","大提琴","木吉他"], ans:"长笛" },
+  { url:"https://aka.doubaocdn.com/s/lRpPzq3KRK", q:"这段音频属于什么声音？",
+    opts:["雨声","人群嘈杂声","机械运转声","水花溅起声","风声"], ans:"雨声" },
+  { url:"https://aka.doubaocdn.com/s/ljDejhmeTo", q:"这段音频属于什么声音？",
+    opts:["人群嘈杂声","雨声","水花溅起声","机械运转声","脚步声"], ans:"人群嘈杂声" },
+  { url:"https://aka.doubaocdn.com/s/HhbsmtDetA", q:"这段音频属于什么声音？",
+    opts:["机械运转声","雨声","人群嘈杂声","水花溅起声","脚步声"], ans:"机械运转声" },
+  { url:"https://aka.doubaocdn.com/s/IcGembaoS4", q:"这段音频属于什么声音？",
+    opts:["水花溅起声","雨声","机械运转声","人群嘈杂声","风声"], ans:"水花溅起声" },
+  { url:"https://aka.doubaocdn.com/s/UUw5fi1ln8", q:"这段人声的特征最接近？",
+    opts:["青年男声，声音清亮","中年女声，低沉有磁性","少女声，清亮偏高","老年男声，沙哑低沉","儿童声"], ans:"青年男声，声音清亮" },
+  { url:"https://aka.doubaocdn.com/s/S43BKqHNn7", q:"这段人声的特征最接近？",
+    opts:["中年女声，低沉有磁性","青年男声，声音清亮","少女声，清亮偏高","老年男声，沙哑低沉","男童声"], ans:"中年女声，低沉有磁性" },
+  { url:"https://aka.doubaocdn.com/s/azPRQmUFjj", q:"这段音乐的整体风格最接近？",
+    opts:["电子舞曲","爵士","古典","民谣","摇滚"], ans:"电子舞曲" },
+  { url:"https://aka.doubaocdn.com/s/2Pu5xo2Sq5", q:"这段音乐的整体风格最接近？",
+    opts:["爵士","电子舞曲","古典","民谣","流行"], ans:"爵士" },
+  { url:"https://aka.doubaocdn.com/s/Oc5AtM2357", q:"这段音乐的整体风格最接近？",
+    opts:["古典","电子舞曲","爵士","摇滚","流行"], ans:"古典" }
+];
+
+// ---- 第二部分：真实歌曲曲库 100 首（30s 听感片段）----
+var SONGS = [{"title": "keep you safe", "artist": "vaud,Shiloh", "clip": "https://aka.doubaocdn.com/s/1UAPDW4v7d", "struct": "https://aka.doubaocdn.com/s/4DelwRUj9t"}, {"title": "i'm in love with you", "artist": "Kina", "clip": "https://aka.doubaocdn.com/s/lFRQUmVo2K", "struct": "https://aka.doubaocdn.com/s/J2rkVSxl3Q"}, {"title": "城南花已开", "artist": "三亩地", "clip": "https://aka.doubaocdn.com/s/VVvlwwUCc7", "struct": "https://aka.doubaocdn.com/s/v6LAAwq1nb"}, {"title": "K i n k a k u j i 金閣寺", "artist": "Koyö", "clip": "https://aka.doubaocdn.com/s/8V052CILEQ", "struct": "https://aka.doubaocdn.com/s/u5nUwRAW4T"}, {"title": "在我的自閉宇宙中", "artist": "n1um", "clip": "https://aka.doubaocdn.com/s/tLI7IuwpiW", "struct": "https://aka.doubaocdn.com/s/9WSYYgvQou"}, {"title": "i won't let you feel alone again", "artist": "Demxntia", "clip": "https://aka.doubaocdn.com/s/mj9WOxgSVO", "struct": "https://aka.doubaocdn.com/s/DeocghAUR8"}, {"title": "DAY1", "artist": "艾志恒Asen", "clip": "https://aka.doubaocdn.com/s/JECWmAV85U", "struct": "https://aka.doubaocdn.com/s/9aoK8lnAPb"}, {"title": "Away From", "artist": "千坂", "clip": "https://aka.doubaocdn.com/s/IMJdiUi70v", "struct": "https://aka.doubaocdn.com/s/UO8czJuPBX"}, {"title": "subtitles", "artist": "nobloodnotears,lil ponyboy", "clip": "https://aka.doubaocdn.com/s/KWR42Ofoth", "struct": "https://aka.doubaocdn.com/s/AlFAnoa3Ry"}, {"title": "Close To You", "artist": "Annie Tracy,Robin Thicke", "clip": "https://aka.doubaocdn.com/s/JorhBVbD3T", "struct": "https://aka.doubaocdn.com/s/mfeucJsFO7"}, {"title": "两难", "artist": "江辰", "clip": "https://aka.doubaocdn.com/s/b3C4UqlITT", "struct": "https://aka.doubaocdn.com/s/bHdw3KrfjW"}, {"title": "默", "artist": "陈皮老狗", "clip": "https://aka.doubaocdn.com/s/eX9mHgUJ8n", "struct": "https://aka.doubaocdn.com/s/rFUSvAQAkQ"}, {"title": "Count Me Out", "artist": "Kendrick Lamar", "clip": "https://aka.doubaocdn.com/s/Z8tv9qcYK6", "struct": "https://aka.doubaocdn.com/s/8VD2IQ4FfE"}, {"title": "Syndrome", "artist": "CIKI", "clip": "https://aka.doubaocdn.com/s/f2po2raUo3", "struct": "https://aka.doubaocdn.com/s/T0LuwRO9dq"}, {"title": "也", "artist": "李佳隆,等一下就回家", "clip": "https://aka.doubaocdn.com/s/5bzayv9UpH", "struct": "https://aka.doubaocdn.com/s/vl2bRNqqbU"}, {"title": "When I Am Gone", "artist": "Shiloh Dynasty,Monty Datta", "clip": "https://aka.doubaocdn.com/s/PlCwBKUE0F", "struct": "https://aka.doubaocdn.com/s/nIiAL1GqeZ"}, {"title": "[Free]\"get bombed\"(Prod. by Song9)", "artist": "SOULFRESH BEATS", "clip": "https://aka.doubaocdn.com/s/I7TSE4MD1d", "struct": "https://aka.doubaocdn.com/s/Afw2Iz36Zj"}, {"title": "Matters", "artist": "itssvd,Shiloh Dynasty", "clip": "https://aka.doubaocdn.com/s/WP6VwihHAP", "struct": "https://aka.doubaocdn.com/s/ZV5Sy5DrT0"}, {"title": "where did u go? (Ocean Mix)", "artist": "Ocean", "clip": "https://aka.doubaocdn.com/s/gYCH2kp61p", "struct": "https://aka.doubaocdn.com/s/F0V654LQpG"}, {"title": "Tired", "artist": "DENCHO", "clip": "https://aka.doubaocdn.com/s/fQci4SFqUO", "struct": "https://aka.doubaocdn.com/s/J68kylKUqD"}, {"title": "英雄", "artist": "艾志恒Asen", "clip": "https://aka.doubaocdn.com/s/Q9QCkKcm8X", "struct": "https://aka.doubaocdn.com/s/YluN8oLbDl"}, {"title": "風待ち", "artist": "伍々慧", "clip": "https://aka.doubaocdn.com/s/y8olKsVLs7", "struct": "https://aka.doubaocdn.com/s/X7VyKkuwcY"}, {"title": "Kill The Game", "artist": "Round_2,贰万,早安", "clip": "https://aka.doubaocdn.com/s/RDDWJ9GVvi", "struct": "https://aka.doubaocdn.com/s/xEEwPgmqpn"}, {"title": "standing barefoot at your side", "artist": "hateful", "clip": "https://aka.doubaocdn.com/s/rsyVUxnjn8", "struct": "https://aka.doubaocdn.com/s/ah74NwUpF6"}, {"title": "修罗", "artist": "SASIOVERLXRD", "clip": "https://aka.doubaocdn.com/s/osNyg5yy8c", "struct": "https://aka.doubaocdn.com/s/UlMABiIBFk"}, {"title": "岁月神偷", "artist": "金玟岐", "clip": "https://aka.doubaocdn.com/s/FHwzvWFpQP", "struct": "https://aka.doubaocdn.com/s/Vkv4tvAzfB"}, {"title": "焦点 / Highlight ", "artist": "Lu1,Cee,蛋堡", "clip": "https://aka.doubaocdn.com/s/FZeswIYLXt", "struct": "https://aka.doubaocdn.com/s/nxWxUz55br"}, {"title": "come thru", "artist": "KIDTENDO!,Shiloh", "clip": "https://aka.doubaocdn.com/s/ioRiPo6tsZ", "struct": "https://aka.doubaocdn.com/s/klp3AKGGbQ"}, {"title": "(FREE)ヽ｀xiangzaiyuzhonggeiniyigeyongbaoヽ｀、ヽpt1", "artist": "持枪boi", "clip": "https://aka.doubaocdn.com/s/41bVUVwQw1", "struct": "https://aka.doubaocdn.com/s/tHE4lyI5cP"}, {"title": "刀麻发鬓角", "artist": "刀脚", "clip": "https://aka.doubaocdn.com/s/yBc5nq5LhV", "struct": "https://aka.doubaocdn.com/s/3pl0uhYpyV"}, {"title": "ding mogu", "artist": "elijah who", "clip": "https://aka.doubaocdn.com/s/SyhZ2Hepub", "struct": "https://aka.doubaocdn.com/s/RZ1FwH1vLg"}, {"title": "BAPESTA(Prod.Izak)", "artist": "FENDIGHEE RICCH,createmyfashionbaby,SKINNYYOYO,马思唯", "clip": "https://aka.doubaocdn.com/s/wuhPGTPlvB", "struct": "https://aka.doubaocdn.com/s/DdtvdVWxqI"}, {"title": "Blue Everyday", "artist": ".", "clip": "https://aka.doubaocdn.com/s/YtNeeyfOJa", "struct": "https://aka.doubaocdn.com/s/xUXmhoPiAC"}, {"title": "Bad - Single", "artist": "The Cab", "clip": "https://aka.doubaocdn.com/s/mrkWEMSzbU", "struct": "https://aka.doubaocdn.com/s/VehHVqFhun"}, {"title": "What's Your Name", "artist": "Shane Harper", "clip": "https://aka.doubaocdn.com/s/iCP8UIVOmm", "struct": "https://aka.doubaocdn.com/s/KCNdwkkzCC"}, {"title": "道理的道理", "artist": "沈以诚", "clip": "https://aka.doubaocdn.com/s/yev1BVYgmJ", "struct": "https://aka.doubaocdn.com/s/b1CIh0PyQG"}, {"title": "Endless Daydream (Outro)", "artist": "Shirfine", "clip": "https://aka.doubaocdn.com/s/iUmjOF0Hp4", "struct": "https://aka.doubaocdn.com/s/qltUxB0HzC"}, {"title": "死掉了", "artist": "Shark", "clip": "https://aka.doubaocdn.com/s/H9Uib6dPma", "struct": "https://aka.doubaocdn.com/s/GFUmVH21oC"}, {"title": "ＷＡＩＴＩＮＧ", "artist": "TRA$H", "clip": "https://aka.doubaocdn.com/s/H8sMWIjVn1", "struct": "https://aka.doubaocdn.com/s/yPtmGaq2b2"}, {"title": "像条狗(Like A Doggy)", "artist": "Yono-y", "clip": "https://aka.doubaocdn.com/s/i0UICE5T3s", "struct": "https://aka.doubaocdn.com/s/u2ejU7dlhf"}, {"title": "TroubledYouth", "artist": "Bones", "clip": "https://aka.doubaocdn.com/s/J2zgFIvTfM", "struct": "https://aka.doubaocdn.com/s/KINE2sCUUs"}, {"title": "Lemon", "artist": "Tülpa", "clip": "https://aka.doubaocdn.com/s/UPMBMHiOmt", "struct": "https://aka.doubaocdn.com/s/QWWLAzUUKz"}, {"title": "I Wrote This Song 4 U (Prod. Killedmyself)", "artist": "LiL BO WEEP", "clip": "https://aka.doubaocdn.com/s/aW8U3eGUmn", "struct": "https://aka.doubaocdn.com/s/lJVwTMfwJj"}, {"title": "❄️", "artist": "陈笑", "clip": "https://aka.doubaocdn.com/s/rw7VQH5Fk2", "struct": "https://aka.doubaocdn.com/s/J0kW9WfaOh"}, {"title": "气球", "artist": "BlackKey,黛米Dem1Fei", "clip": "https://aka.doubaocdn.com/s/7ryDY6LuXx", "struct": "https://aka.doubaocdn.com/s/q39UCR25IO"}, {"title": "Jay Park (feat. Okasian) - You Know", "artist": "Cha Cha Malone", "clip": "https://aka.doubaocdn.com/s/34pUCdUBmb", "struct": "https://aka.doubaocdn.com/s/lB53QitNsL"}, {"title": "heartbreaker", "artist": "AllHailSun", "clip": "https://aka.doubaocdn.com/s/VNgRaWRg4w", "struct": "https://aka.doubaocdn.com/s/p1LvRNYgTx"}, {"title": "cigarettes & sex", "artist": "prxz", "clip": "https://aka.doubaocdn.com/s/lGGciM5e6m", "struct": "https://aka.doubaocdn.com/s/6wnX3EFXtX"}, {"title": "红", "artist": "罗言", "clip": "https://aka.doubaocdn.com/s/79JtAHEiEh", "struct": "https://aka.doubaocdn.com/s/hTL4WqvwCL"}, {"title": "不用去猜 (Jazz Version)", "artist": "Jony J", "clip": "https://aka.doubaocdn.com/s/h73qbexh4m", "struct": "https://aka.doubaocdn.com/s/LfkxsuMJVR"}, {"title": "Toxic", "artist": "BRLLNT", "clip": "https://aka.doubaocdn.com/s/3xZb2VFkxL", "struct": "https://aka.doubaocdn.com/s/3d1KENBLTg"}, {"title": "just friends", "artist": "keshi", "clip": "https://aka.doubaocdn.com/s/OAr4GqrwZ7", "struct": "https://aka.doubaocdn.com/s/FWoyBuDV4Y"}, {"title": "Tryin'", "artist": "AQVOL", "clip": "https://aka.doubaocdn.com/s/SucRu49m7p", "struct": "https://aka.doubaocdn.com/s/WsYtzHznCZ"}, {"title": "见龙卸甲", "artist": "MULA SAKEE", "clip": "https://aka.doubaocdn.com/s/LkaRwS0hZ8", "struct": "https://aka.doubaocdn.com/s/RmgQjptQCr"}, {"title": "Who? (XJIP Remix)", "artist": "XJIP,TSUKI", "clip": "https://aka.doubaocdn.com/s/kGr6CN4ftD", "struct": "https://aka.doubaocdn.com/s/SUWLYl0p0X"}, {"title": "对号入座 FT. AR", "artist": "Cee,AR刘夫阳", "clip": "https://aka.doubaocdn.com/s/NyNmtV3y2d", "struct": "https://aka.doubaocdn.com/s/G94VWdI0nV"}, {"title": "FREE BEAT 月球曲", "artist": "Todd Malone", "clip": "https://aka.doubaocdn.com/s/JyUdh8Rpr8", "struct": "https://aka.doubaocdn.com/s/yCFcktVp4V"}, {"title": "戏精急诊室(ft.Lil Jet)", "artist": "孙瑄阳Xtina,陆政廷Lil Jet", "clip": "https://aka.doubaocdn.com/s/YvVDAteRc9", "struct": "https://aka.doubaocdn.com/s/NSntz5igLm"}, {"title": "Anything You Want", "artist": "Zackson,Wild Fox", "clip": "https://aka.doubaocdn.com/s/cUhAxB2PNJ", "struct": "https://aka.doubaocdn.com/s/V6jT7NYXzR"}, {"title": "Don't Go (feat. Shiloh)", "artist": "X.X,Shiloh", "clip": "https://aka.doubaocdn.com/s/n9ndhAfkGV", "struct": "https://aka.doubaocdn.com/s/J4UGtVIYES"}, {"title": "feel like making luv.", "artist": "SheldonLeeee", "clip": "https://aka.doubaocdn.com/s/k2o3nrjVt4", "struct": "https://aka.doubaocdn.com/s/JKRogDu3Yn"}, {"title": "your name (feat. hateful)", "artist": "Demxntia,hateful", "clip": "https://aka.doubaocdn.com/s/e6UbadA3Kg", "struct": "https://aka.doubaocdn.com/s/L4zX2Ua7Tr"}, {"title": "着迷", "artist": "MAREA,wweimm微米,Xi3R", "clip": "https://aka.doubaocdn.com/s/tnV4M5rvfh", "struct": "https://aka.doubaocdn.com/s/uZv3xKUcIr"}, {"title": "举步维艰", "artist": "姜云升,朴冉", "clip": "https://aka.doubaocdn.com/s/6MoaAccP6s", "struct": "https://aka.doubaocdn.com/s/ITYCXGJqxy"}, {"title": "RIP", "artist": "Croosh,Shiloh Dynasty", "clip": "https://aka.doubaocdn.com/s/FHtvM7ugxD", "struct": "https://aka.doubaocdn.com/s/93OdYLsTul"}, {"title": "【Free】飝", "artist": "Veezy", "clip": "https://aka.doubaocdn.com/s/E7PrOhRyeR", "struct": "https://aka.doubaocdn.com/s/MzIzseg0cj"}, {"title": "waiting for someone", "artist": "m6ke,Shiloh", "clip": "https://aka.doubaocdn.com/s/jw3txNtGsR", "struct": "https://aka.doubaocdn.com/s/2PXiiFLKDr"}, {"title": "从来没在怕", "artist": "YSJ", "clip": "https://aka.doubaocdn.com/s/fhmkRRYoK4", "struct": "https://aka.doubaocdn.com/s/GQxhCKiy0h"}, {"title": "Mona Lisa", "artist": "VALNTN,Peter Fenn,Tray Haggerty", "clip": "https://aka.doubaocdn.com/s/VieUVyhffz", "struct": "https://aka.doubaocdn.com/s/pyZPZchOn8"}, {"title": "[Free] Past", "artist": "Lionzed", "clip": "https://aka.doubaocdn.com/s/prd69yZXFZ", "struct": "https://aka.doubaocdn.com/s/lbg0oPEl4H"}, {"title": "Ti Amo", "artist": "艾福杰尼", "clip": "https://aka.doubaocdn.com/s/F05oOXOQ8V", "struct": "https://aka.doubaocdn.com/s/HV28U1u71P"}, {"title": "Ride With Me (Prod. KillaGraham)", "artist": "Thutmose", "clip": "https://aka.doubaocdn.com/s/9B3pEsubNt", "struct": "https://aka.doubaocdn.com/s/tIeretAAHB"}, {"title": "Trust", "artist": "KillRay", "clip": "https://aka.doubaocdn.com/s/iN7eyJuMnM", "struct": "https://aka.doubaocdn.com/s/3DfmN0gz2f"}, {"title": "我想part2", "artist": "法老,杨秋儒", "clip": "https://aka.doubaocdn.com/s/w2nNdrPG87", "struct": "https://aka.doubaocdn.com/s/2OEKVyepk9"}, {"title": "Spend one life with me", "artist": "kim23,YC", "clip": "https://aka.doubaocdn.com/s/9Cwlp8nwNg", "struct": "https://aka.doubaocdn.com/s/ZXCPhSUyHH"}, {"title": "I Am You", "artist": "Kim Taylor", "clip": "https://aka.doubaocdn.com/s/V2lfLvlIBi", "struct": "https://aka.doubaocdn.com/s/5VZmHnkhCS"}, {"title": "Trapanese", "artist": "Lil Nickle", "clip": "https://aka.doubaocdn.com/s/uQgba4gpMw", "struct": "https://aka.doubaocdn.com/s/mxd0hxaPy8"}, {"title": "Rain", "artist": "Shuk", "clip": "https://aka.doubaocdn.com/s/OjHudt9zjD", "struct": "https://aka.doubaocdn.com/s/mLNgiPkXbH"}, {"title": "㋛ free beat ' 神仙女孩快踩着我的beat，轻轻晃动身体来享受这个feel！", "artist": "象牙之塔", "clip": "https://aka.doubaocdn.com/s/ChpMDL4iO9", "struct": "https://aka.doubaocdn.com/s/nAsaL5K8YW"}, {"title": "STAY LOW (ft. 泥鳅)", "artist": "直火帮 Straight Fire Gang,泥鳅zinco", "clip": "https://aka.doubaocdn.com/s/a2Fg8rFyNU", "struct": "https://aka.doubaocdn.com/s/6pnQ9NvRnU"}, {"title": "暴雨II", "artist": "陆政廷Lil Jet", "clip": "https://aka.doubaocdn.com/s/kPJFxqJmNB", "struct": "https://aka.doubaocdn.com/s/fOSZcm5JOV"}, {"title": "等", "artist": "YKEY", "clip": "https://aka.doubaocdn.com/s/C9hQJJkKKx", "struct": "https://aka.doubaocdn.com/s/IwPlIaXr6r"}, {"title": "♡B l u e ℉", "artist": "BlueLee", "clip": "https://aka.doubaocdn.com/s/KVsfYfskVV", "struct": "https://aka.doubaocdn.com/s/sfNAVBKKDr"}, {"title": "勿念他归", "artist": "V.A.", "clip": "https://aka.doubaocdn.com/s/sCdcCiwV99", "struct": "https://aka.doubaocdn.com/s/wvRreIFfnJ"}, {"title": "[free]more than you have", "artist": "weloveziho", "clip": "https://aka.doubaocdn.com/s/HuAvw7i2ko", "struct": "https://aka.doubaocdn.com/s/RHjUuaJqPq"}, {"title": "Call of Silence", "artist": "Eternal·Raijin", "clip": "https://aka.doubaocdn.com/s/07ZRBZ9tgT", "struct": "https://aka.doubaocdn.com/s/RfW9CtlrK1"}, {"title": "百鬼夜行", "artist": "C-2", "clip": "https://aka.doubaocdn.com/s/UnJE8fU7LK", "struct": "https://aka.doubaocdn.com/s/bKk9pSIHPc"}, {"title": "五小区", "artist": "王齐铭WatchMe", "clip": "https://aka.doubaocdn.com/s/TdlnsbjQKU", "struct": "https://aka.doubaocdn.com/s/Rl90EGWvr6"}, {"title": "橙梦", "artist": "张希,陈鸿宇", "clip": "https://aka.doubaocdn.com/s/92xdAQ1czv", "struct": "https://aka.doubaocdn.com/s/Zi172fUOXA"}, {"title": "骰子 (Prod. CamorraMob)", "artist": "马赫mood,杜逸风 Firewind SoKu", "clip": "https://aka.doubaocdn.com/s/EqVHRTdkto", "struct": "https://aka.doubaocdn.com/s/Iz8CeARCVC"}, {"title": "yellow", "artist": "eel.", "clip": "https://aka.doubaocdn.com/s/du3hpv22MK", "struct": "https://aka.doubaocdn.com/s/ndFLSBqgzO"}, {"title": "热带鱼", "artist": "Jerry Qi 杰瑞丘", "clip": "https://aka.doubaocdn.com/s/jTteKmNYJT", "struct": "https://aka.doubaocdn.com/s/2tB2FnDUvR"}, {"title": "【FREE BEAT】''ʎpoqou'' (XXXTentacion 17 Type Beat)", "artist": "9Zi", "clip": "https://aka.doubaocdn.com/s/2gVtuuSXZH", "struct": "https://aka.doubaocdn.com/s/M2ytrNzJBx"}, {"title": "过季短袖", "artist": "廖俊涛", "clip": "https://aka.doubaocdn.com/s/b4CySRIcGx", "struct": "https://aka.doubaocdn.com/s/w3VCIh0xRJ"}, {"title": "Баллада", "artist": "Xcho,МОТ", "clip": "https://aka.doubaocdn.com/s/ima2iEn2Qz", "struct": "https://aka.doubaocdn.com/s/VxrDGX9dIm"}, {"title": "哈格砸Freestyle", "artist": "艾志恒Asen,MULA SAKEE", "clip": "https://aka.doubaocdn.com/s/x5ih9BYuZU", "struct": "https://aka.doubaocdn.com/s/uKhEd963mz"}, {"title": "落夜（Feat.Edge雨懦）", "artist": "NewMore牛魔,Edge雨懦", "clip": "https://aka.doubaocdn.com/s/UsG7sSYBsi", "struct": "https://aka.doubaocdn.com/s/I5GVKiHtPa"}, {"title": "日月星辉之中，你是第四种难得", "artist": "沈奕秋", "clip": "https://aka.doubaocdn.com/s/OjuvPeYtxv", "struct": "https://aka.doubaocdn.com/s/EkrcAUoen1"}, {"title": "Trip", "artist": "Axero", "clip": "https://aka.doubaocdn.com/s/VwSzWgXpil", "struct": "https://aka.doubaocdn.com/s/obgUitkn8j"}, {"title": "Koi", "artist": "GYVUS", "clip": "https://aka.doubaocdn.com/s/JOyA3VCawH", "struct": "https://aka.doubaocdn.com/s/NImXfHSBpW"}];
+
+/* ============================================================
+ * 配置
+ * ============================================================ */
+var PASS_RATE = 0.7;
+var PART1_COUNT = 8;
+var PART2_COUNT = 5;
+var PART3_COUNT = 2;
+var P2_MIN = 15;
+var P3_MIN_SEGS = 2;   // Part3 每首歌最少标注的段落区间数
+var FORM_URL = "https://g0iocpiqvf9.feishu.cn/share/base/shrcnBllVArFZmzPXO3HaqWLOVf";
+
+/* ============================================================
+ * 状态与工具
+ * ============================================================ */
+var state = { name:"", contact:"", code:"", p1:[], p1Sel:{}, p1Score:0, p1Rate:0, p2:[], p2Text:{}, p3:[], p3Segs:{} };
+
+function shuffle(arr){ var a=arr.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+function sample(arr,n){ return shuffle(arr).slice(0,n); }
+function show(id){
+  var vs=document.querySelectorAll(".view");
+  for(var i=0;i<vs.length;i++) vs[i].classList.remove("active");
+  document.getElementById(id).classList.add("active");
+  window.scrollTo({top:0});
+}
+function msg(id,on){ document.getElementById(id).classList.toggle("show",!!on); }
+function genCode(){ var c="ABCDEFGHJKMNPQRSTUVWXYZ23456789",s=""; for(var i=0;i<5;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
+function fmt(t){ if(!isFinite(t)) return "0:00"; var m=Math.floor(t/60),s=Math.floor(t%60); return m+":"+(s<10?"0":"")+s; }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+var DONE_KEY="ls_done_test";
+function isDone(name){ try{ var m=JSON.parse(localStorage.getItem(DONE_KEY)||"{}"); return !!m[name]; }catch(e){ return false; } }
+function markDone(name){ try{ var m=JSON.parse(localStorage.getItem(DONE_KEY)||"{}"); m[name]=1; localStorage.setItem(DONE_KEY,JSON.stringify(m)); }catch(e){} }
+function prefillUrl(obj){
+  var parts=[];
+  for(var k in obj){ parts.push("prefill_"+encodeURIComponent(k)+"="+encodeURIComponent(obj[k])); }
+  return FORM_URL+(parts.length?"?"+parts.join("&"):"");
+}
+
+/* ============================================================
+ * 播放器组件
+ * ============================================================ */
+var activeAudio=null;
+function createPlayer(url,label){
+  var wrap=document.createElement("div"); wrap.className="player";
+  var audio=document.createElement("audio"); audio.src=url; audio.preload="metadata";
+  var btn=document.createElement("button"); btn.type="button"; btn.className="play-btn"; btn.setAttribute("aria-label","播放");
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  var eq=document.createElement("div"); eq.className="eq"; for(var i=0;i<5;i++) eq.appendChild(document.createElement("span"));
+  var meta=document.createElement("div"); meta.className="pmeta";
+  var pl=document.createElement("div"); pl.className="plabel"; pl.textContent=label||"试听";
+  var prog=document.createElement("div"); prog.className="prog"; var fill=document.createElement("div"); fill.className="prog-fill"; prog.appendChild(fill);
+  var pt=document.createElement("div"); pt.className="ptime"; pt.textContent="0:00 / 0:00";
+  meta.appendChild(pl); meta.appendChild(prog); meta.appendChild(pt);
+  wrap.appendChild(btn); wrap.appendChild(eq); wrap.appendChild(meta);
+  function setP(on){ wrap.classList.toggle("playing",on); btn.innerHTML=on?'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>':'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'; }
+  audio.addEventListener("timeupdate",function(){ fill.style.width=(audio.currentTime/audio.duration*100)+"%"; pt.textContent=fmt(audio.currentTime)+" / "+fmt(audio.duration); });
+  audio.addEventListener("loadedmetadata",function(){ pt.textContent="0:00 / "+fmt(audio.duration); });
+  audio.addEventListener("play",function(){ activeAudio=audio; setP(true); });
+  audio.addEventListener("pause",function(){ setP(false); });
+  audio.addEventListener("ended",function(){ setP(false); fill.style.width="100%"; });
+  btn.addEventListener("click",function(){
+    if(audio.paused){ if(activeAudio&&activeAudio!==audio){try{activeAudio.pause();}catch(e){}} audio.play().catch(function(){}); } else audio.pause();
+  });
+  return { el:wrap, audio:audio };
+}
+
+/* ============================================================
+ * Part 1
+ * ============================================================ */
+var OPTKEYS=["A","B","C","D","E","F"];
+function renderPart1(){
+  var list=document.getElementById("p1-list"); list.innerHTML="";
+  document.getElementById("p1-total").textContent=state.p1.length;
+  state.p1.forEach(function(q,qi){
+    var card=document.createElement("div"); card.className="q-card";
+    var head=document.createElement("div"); head.className="q-head";
+    var idx=document.createElement("div"); idx.className="q-index"; idx.textContent=qi+1;
+    var title=document.createElement("div"); title.className="q-title"; title.textContent=q.q;
+    head.appendChild(idx); head.appendChild(title); card.appendChild(head);
+    card.appendChild(createPlayer(q.url,"第 "+(qi+1)+" 段音频").el);
+    q.shuffled.forEach(function(opt,oi){
+      var b=document.createElement("button"); b.type="button"; b.className="opt";
+      b.innerHTML='<span class="optkey">'+OPTKEYS[oi]+'</span>'+esc(opt);
+      b.addEventListener("click",function(){
+        var all=card.querySelectorAll(".opt"); for(var k=0;k<all.length;k++) all[k].classList.remove("sel");
+        b.classList.add("sel"); state.p1Sel[qi]=oi;
+      });
+      card.appendChild(b);
+    });
+    list.appendChild(card);
+  });
+}
+function submitPart1(){
+  if(Object.keys(state.p1Sel).length<state.p1.length){ msg("part1-msg",true); return; }
+  msg("part1-msg",false);
+  var correct=0;
+  state.p1.forEach(function(q,qi){ if(state.p1Sel[qi]===q.correctIdx) correct++; });
+  state.p1Score=correct; state.p1Rate=correct/state.p1.length;
+  showPart1Result();
+}
+function showPart1Result(){
+  var total=state.p1.length, correct=state.p1Score;
+  document.getElementById("p1-num").textContent=correct+"/"+total;
+  var ring=document.getElementById("p1-ring"); var pass=state.p1Rate>=PASS_RATE;
+  ring.classList.toggle("pass",pass); ring.classList.toggle("fail",!pass);
+  var v=document.getElementById("p1-verdict"), sub=document.getElementById("p1-verdict-sub");
+  if(pass){ v.textContent="通过听辨硬门槛"; v.className="verdict pass"; sub.innerHTML="得分率 "+Math.round(state.p1Rate*100)+"% ≥ 通过线 "+Math.round(PASS_RATE*100)+"%。请继续完成后面的整体判断与曲式分析。"; }
+  else{ v.textContent="未通过听辨硬门槛"; v.className="verdict fail"; sub.innerHTML="得分率 "+Math.round(state.p1Rate*100)+"% 低于通过线 "+Math.round(PASS_RATE*100)+"%。本次筛选到此结束，感谢参与。"; }
+  var body=document.getElementById("p1-result-body"); body.innerHTML="";
+  state.p1.forEach(function(q,qi){
+    var ok=state.p1Sel[qi]===q.correctIdx;
+    var item=document.createElement("div"); item.className="result-item";
+    var h=document.createElement("h3"); h.textContent=(qi+1)+". "+(ok?"回答正确":"回答有误");
+    var t=document.createElement("div"); t.className="rtxt"; t.textContent=q.q;
+    var m=document.createElement("div"); m.className="rmeta"; m.textContent="你的答案："+q.shuffled[state.p1Sel[qi]];
+    item.appendChild(h); item.appendChild(t); item.appendChild(m); body.appendChild(item);
+  });
+  var wrap=document.getElementById("p1-next-wrap"); wrap.innerHTML="";
+  if(pass){
+    var b=document.createElement("button"); b.type="button"; b.className="btn block"; b.textContent="进入第二部分 · 整体听感";
+    b.addEventListener("click",function(){ document.getElementById("p2-count").textContent=state.p2.length; show("view-part2intro"); }); wrap.appendChild(b);
+  }else{
+    var r=document.createElement("button"); r.type="button"; r.className="btn ghost block"; r.textContent="重新测试（重新抽题）";
+    r.addEventListener("click",function(){ startTest(); }); wrap.appendChild(r);
+  }
+  show("view-part1result");
+}
+
+/* ============================================================
+ * Part 2
+ * ============================================================ */
+function renderPart2(){
+  var list=document.getElementById("p2-list"); list.innerHTML="";
+  document.getElementById("p2-total").textContent=state.p2.length;
+  document.getElementById("p2-count").textContent=state.p2.length;
+  state.p2.forEach(function(sg,si){
+    var card=document.createElement("div"); card.className="q-card";
+    var head=document.createElement("div"); head.className="q-head";
+    var idx=document.createElement("div"); idx.className="q-index"; idx.textContent=si+1;
+    var title=document.createElement("div"); title.className="q-title"; title.textContent="曲目 "+(si+1);
+    head.appendChild(idx); head.appendChild(title); card.appendChild(head);
+    var note=document.createElement("p"); note.className="p2note"; note.textContent="试听 30 秒后，描述这首音乐的整体听感（风格 / 配器 / 音色 / 节奏 / 氛围）。";
+    card.appendChild(note);
+    card.appendChild(createPlayer(sg.clip,"曲目 "+(si+1)+" · 30 秒片段").el);
+    var ta=document.createElement("textarea"); ta.className="input"; ta.placeholder="例：偏流行/说唱风格，有清晰的鼓点和贝斯，人声较清亮，节奏中等偏快，整体氛围偏轻快……";
+    ta.addEventListener("input",function(){ state.p2Text[si]=ta.value; });
+    card.appendChild(ta);
+    list.appendChild(card);
+  });
+}
+function submitPart2(){
+  var missing=[];
+  state.p2.forEach(function(sg,si){ var t=(state.p2Text[si]||"").trim(); if(t.length<P2_MIN) missing.push(si+1); });
+  if(missing.length){ msg("part2-msg",true); return; }
+  msg("part2-msg",false);
+  document.getElementById("p3-count").textContent=state.p3.length;
+  show("view-part3intro");
+}
+
+/* ============================================================
+ * Part 3
+ * ============================================================ */
+/* ============================================================
+ * Part 3 · 波形频谱区间标注
+ * ============================================================ */
+var P3_COLORS = ["#4f8cff","#ff8c42","#38cfa0","#ff5d73","#b07cff","#ffcf3f","#5ad8a6","#f759ab"];
+var P3_LABELS = ["前奏","主歌","副歌","间奏","尾奏","桥段"];
+var P3_DUR = 60;                  // 片段时长（秒）
+var _waves = {};                  // si -> peaks[]
+var _specState = {};              // si -> {canvas, labels, drag, start, cur, pending}
+
+function getWave(si,url,cb){
+  if(_waves[si]!==undefined){ cb(_waves[si]); return; }
+  try{
+    fetch(url).then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(function(buf){
+        var Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) throw 0;
+        return new Ctx().decodeAudioData(buf);
+      })
+      .then(function(ab){
+        var ch=ab.getChannelData(0), N=180, step=Math.floor(ch.length/N), peaks=[];
+        for(var i=0;i<N;i++){ var mx=0; for(var j=i*step;j<(i+1)*step&&j<ch.length;j++){ var a=Math.abs(ch[j]); if(a>mx)mx=a; } peaks.push(mx); }
+        _waves[si]=peaks; cb(peaks);
+      })
+      .catch(function(){ _waves[si]=null; cb(null); });
+  }catch(e){ _waves[si]=null; cb(null); }
+}
+function pseudoWave(si){
+  var p=[], x=(si+1)*7919;
+  for(var i=0;i<180;i++){ x=(x*1103515245+12345)&0x7fffffff; var v=(x%100)/100; var env=0.55+0.45*Math.sin((i/180)*Math.PI*2+si); p.push(v*env*0.85); }
+  return p;
+}
+function specX(canvas){ return canvas.clientWidth||640; }
+function xToT(x,canvas){ return Math.max(0,Math.min(P3_DUR,(x/specX(canvas))*P3_DUR)); }
+function drawSpec(canvas,si){
+  var dpr=window.devicePixelRatio||1, w=specX(canvas), h=120;
+  if(canvas.width!==Math.round(w*dpr)){ canvas.width=Math.round(w*dpr); canvas.height=Math.round(h*dpr); }
+  var ctx=canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  var peaks=_waves[si]||pseudoWave(si), mid=h/2, bw=w/peaks.length;
+  ctx.fillStyle="rgba(236,230,218,0.55)";
+  for(var i=0;i<peaks.length;i++){
+    var bh=Math.max(2,peaks[i]*mid*1.8), x=i*bw+0.5;
+    ctx.fillRect(x, mid-bh/2, Math.max(0.8,bw-1), bh);
+  }
+  var segs=state.p3Segs[si]||[];
+  segs.forEach(function(seg,ki){
+    var x1=seg.start/P3_DUR*w, x2=seg.end/P3_DUR*w, col=P3_COLORS[ki%P3_COLORS.length];
+    ctx.globalAlpha=0.30; ctx.fillStyle=col; ctx.fillRect(x1,0,Math.max(2,x2-x1),h); ctx.globalAlpha=1;
+    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.strokeRect(x1+0.75,0.75,Math.max(2,x2-x1)-1.5,h-1.5);
+    ctx.fillStyle=col; ctx.font="700 11px sans-serif"; ctx.textBaseline="top";
+    ctx.fillText(seg.label, x1+5, 5);
+  });
+  var st=_specState[si];
+  if(st&&st.drag&&st.start!==undefined&&st.cur!==undefined){
+    var a=Math.min(st.start,st.cur), b=Math.max(st.start,st.cur);
+    ctx.fillStyle="rgba(232,163,61,0.25)"; ctx.fillRect(a,0,Math.max(2,b-a),h);
+    ctx.strokeStyle="#e8a33d"; ctx.lineWidth=2; ctx.strokeRect(a,0,Math.max(2,b-a),h);
+    ctx.fillStyle="#f4c46d"; ctx.font="700 11px sans-serif"; ctx.textBaseline="top";
+    ctx.fillText(fmt(xToT(a,canvas))+" – "+fmt(xToT(b,canvas)), a+5, h-20);
+  }
+}
+function bindSpecDrag(canvas,si){
+  var st=_specState[si];
+  function up(){
+    st.drag=false;
+    if(st.start!==undefined&&st.cur!==undefined){
+      var a=Math.min(st.start,st.cur), b=Math.max(st.start,st.cur);
+      var t1=xToT(a,canvas), t2=xToT(b,canvas);
+      if(t2-t1>=6) openPending(si,t1,t2);
+    }
+    drawSpec(canvas,si);
+  }
+  canvas.addEventListener("pointerdown",function(e){
+    if(e.pointerType==="mouse"&&e.button!==0) return;
+    st.drag=true; st.start=e.offsetX; st.cur=e.offsetX;
+    if(canvas.setPointerCapture) try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+    drawSpec(canvas,si);
+  });
+  canvas.addEventListener("pointermove",function(e){ if(!st.drag) return; st.cur=e.offsetX; drawSpec(canvas,si); });
+  canvas.addEventListener("pointerup",up);
+  canvas.addEventListener("pointercancel",function(){ st.drag=false; drawSpec(canvas,si); });
+}
+function openPending(si,t1,t2){
+  var st=_specState[si];
+  var old=st.labels.querySelector(".spec-pending"); if(old) old.remove();
+  var box=document.createElement("div"); box.className="spec-pending";
+  var tm=document.createElement("div"); tm.className="ptime"; tm.textContent="已框选 "+fmt(t1)+" – "+fmt(t2)+"，请命名这个段落：";
+  var chips=document.createElement("div"); chips.className="chips";
+  P3_LABELS.forEach(function(lb){
+    var c=document.createElement("button"); c.type="button"; c.className="chip"; c.textContent=lb;
+    c.addEventListener("click",function(){ addSeg(si,t1,t2,lb); });
+    chips.appendChild(c);
+  });
+  var row=document.createElement("div"); row.className="pendrow";
+  var inp=document.createElement("input"); inp.className="input pendinp"; inp.placeholder="或输入自定义结构名";
+  var ok=document.createElement("button"); ok.type="button"; ok.className="btn pendok"; ok.textContent="确定";
+  ok.addEventListener("click",function(){ var v=inp.value.trim(); if(v) addSeg(si,t1,t2,v); });
+  row.appendChild(inp); row.appendChild(ok);
+  box.appendChild(tm); box.appendChild(chips); box.appendChild(row);
+  st.labels.insertBefore(box, st.labels.firstChild);
+  st.pending={t1:t1,t2:t2};
+  setTimeout(function(){ try{ inp.focus(); }catch(e){} },30);
+}
+function addSeg(si,t1,t2,label){
+  if(!state.p3Segs[si]) state.p3Segs[si]=[];
+  state.p3Segs[si].push({start:t1,end:t2,label:label});
+  var st=_specState[si];
+  var p=st.labels.querySelector(".spec-pending"); if(p) p.remove();
+  st.pending=null;
+  renderSegList(si);
+  drawSpec(st.canvas,si);
+}
+function renderSegList(si){
+  var st=_specState[si]; if(!st) return;
+  st.labels.innerHTML="";
+  var segs=state.p3Segs[si]||[];
+  if(!segs.length){
+    var e=document.createElement("div"); e.className="seg-empty"; e.textContent="尚未标注。在频谱上拖动框选段落并命名。";
+    st.labels.appendChild(e); return;
+  }
+  segs.slice().sort(function(a,b){return a.start-b.start;}).forEach(function(seg,ki){
+    var item=document.createElement("div"); item.className="seg-item";
+    var dot=document.createElement("span"); dot.className="dot"; dot.style.background=P3_COLORS[ki%P3_COLORS.length];
+    var tx=document.createElement("span"); tx.className="seg-txt"; tx.textContent=(ki+1)+". "+seg.label+" · "+fmt(seg.start)+" – "+fmt(seg.end);
+    var del=document.createElement("button"); del.type="button"; del.className="seg-del"; del.setAttribute("aria-label","删除"); del.textContent="×";
+    del.addEventListener("click",function(){ state.p3Segs[si].splice(state.p3Segs[si].indexOf(seg),1); renderSegList(si); drawSpec(st.canvas,si); });
+    item.appendChild(dot); item.appendChild(tx); item.appendChild(del);
+    st.labels.appendChild(item);
+  });
+}
+function segSeq(si){
+  return (state.p3Segs[si]||[]).slice().sort(function(a,b){return a.start-b.start;})
+    .map(function(s){ return s.label+"("+fmt(s.start)+"-"+fmt(s.end)+")"; }).join(" → ");
+}
+function renderPart3(){
+  var list=document.getElementById("p3-list"); list.innerHTML="";
+  document.getElementById("p3-total").textContent=state.p3.length;
+  document.getElementById("p3-minseg").textContent=P3_MIN_SEGS;
+  state.p3.forEach(function(sg,si){
+    if(!state.p3Segs[si]) state.p3Segs[si]=[];
+    var card=document.createElement("div"); card.className="q-card spec-card";
+    var head=document.createElement("div"); head.className="q-head";
+    var idx=document.createElement("div"); idx.className="q-index"; idx.textContent=si+1;
+    var title=document.createElement("div"); title.className="q-title"; title.textContent="曲目 "+(si+1)+" · 结构标注";
+    head.appendChild(idx); head.appendChild(title); card.appendChild(head);
+    var sub=document.createElement("div"); sub.className="spec-sub"; sub.textContent="《"+sg.title+"》"+sg.artist+" · 60 秒片段 · 覆盖多个段落";
+    card.appendChild(sub);
+    card.appendChild(createPlayer(sg.struct,"曲目 "+(si+1)+" · 60 秒结构片段").el);
+    var hint=document.createElement("p"); hint.className="p2note"; hint.textContent="在频谱上按住拖动框选一段音频区间，松开后为它选择或填写结构名称；可重复框选多个段落。";
+    card.appendChild(hint);
+    var wrap=document.createElement("div"); wrap.className="spec-wrap";
+    var canvas=document.createElement("canvas"); canvas.className="spec-canvas";
+    wrap.appendChild(canvas);
+    var tic=document.createElement("div"); tic.className="spec-ticks";
+    tic.innerHTML="<span>0:00</span><span>0:30</span><span>1:00</span>";
+    wrap.appendChild(tic);
+    card.appendChild(wrap);
+    var labels=document.createElement("div"); labels.className="spec-labels";
+    card.appendChild(labels);
+    list.appendChild(card);
+    _specState[si]={ canvas:canvas, labels:labels };
+    bindSpecDrag(canvas,si);
+    getWave(si,sg.struct,function(){ drawSpec(canvas,si); });
+    renderSegList(si);
+  });
+}
+function submitPart3(){
+  var missing=[];
+  state.p3.forEach(function(sg,si){
+    var segs=state.p3Segs[si]||[];
+    var valid=segs.length>=P3_MIN_SEGS && segs.every(function(s){ return s.label&&s.end>s.start; });
+    if(!valid) missing.push(si+1);
+  });
+  if(missing.length){ msg("part3-msg",true); return; }
+  msg("part3-msg",false);
+  showResult();
+}
+
+/* ============================================================
+ * 结果
+ * ============================================================ */
+function showResult(){
+  markDone(state.name);
+  var pass=state.p1Rate>=PASS_RATE, pct=Math.round(state.p1Rate*100);
+  document.getElementById("final-num").textContent=pct+"%";
+  var ring=document.getElementById("final-ring");
+  ring.classList.toggle("pass",pass); ring.classList.toggle("fail",!pass);
+  var v=document.getElementById("final-verdict"); v.className="verdict "+(pass?"pass":"fail"); v.textContent=pass?"通过听辨硬门槛":"未通过听辨硬门槛";
+  document.getElementById("result-code").textContent=state.code;
+  document.getElementById("btn-submit-all").onclick=function(){
+    window.open(prefillUrl({"姓名/编号":state.name,"联系方式":state.contact,"测试码":state.code,"测试结果":state.resultText||""}),"_blank");
+  };
+
+  var body=document.getElementById("result-body"); body.innerHTML="";
+  var head=document.createElement("div"); head.className="result-item";
+  var h1=document.createElement("h3"); h1.textContent="基本信息";
+  var t1=document.createElement("div"); t1.className="rtxt";
+  t1.textContent="姓名/编号："+state.name+(state.contact?"\n联系方式："+state.contact:"")+"\n第一部分："+state.p1Score+"/"+state.p1.length+"（"+pct+"%）"+(pass?" · 通过":" · 未通过");
+  head.appendChild(h1); head.appendChild(t1); body.appendChild(head);
+
+  var p2h=document.createElement("div"); p2h.className="result-item";
+  var h2=document.createElement("h3"); h2.textContent="第二部分 · 整体听感判断";
+  p2h.appendChild(h2);
+  state.p2.forEach(function(sg,si){
+    var t=document.createElement("div"); t.className="rtxt";
+    t.textContent="曲目"+(si+1)+"《"+sg.title+"》"+sg.artist+"："+(state.p2Text[si]||"");
+    p2h.appendChild(t);
+  });
+  body.appendChild(p2h);
+
+  var p3h=document.createElement("div"); p3h.className="result-item";
+  var h3=document.createElement("h3"); h3.textContent="第三部分 · 曲式结构分析";
+  p3h.appendChild(h3);
+  state.p3.forEach(function(sg,si){
+    var t=document.createElement("div"); t.className="rtxt";
+    t.textContent="曲目"+(si+1)+"《"+sg.title+"》"+sg.artist+"\n结构序列："+segSeq(si);
+    p3h.appendChild(t);
+  });
+  body.appendChild(p3h);
+
+  var lines=[];
+  lines.push("【音频听辨能力筛选测试 · 结果】");
+  lines.push("测试码："+state.code);
+  lines.push("姓名/编号："+state.name+(state.contact?" | 联系方式："+state.contact:""));
+  lines.push("第一部分 · 听辨硬门槛（"+state.p1Score+"/"+state.p1.length+"，得分率 "+pct+"%，"+(pass?"通过":"未通过")+"）：");
+  state.p1.forEach(function(q,qi){
+    var sel=state.p1Sel[qi];
+    var ans=(sel===undefined)?"未作答":q.shuffled[sel];
+    var tag=(sel===q.correctIdx)?"对":("错，正确："+q.shuffled[q.correctIdx]);
+    lines.push((qi+1)+". "+q.q+" | 你的答案："+ans+"（"+tag+"）");
+  });
+  lines.push("");
+  lines.push("第二部分 · 整体听感判断：");
+  state.p2.forEach(function(sg,si){ lines.push("曲目"+(si+1)+"《"+sg.title+"》"+sg.artist+"："+(state.p2Text[si]||"")); });
+  lines.push("");
+  lines.push("第三部分 · 曲式结构分析：");
+  state.p3.forEach(function(sg,si){
+    lines.push("曲目"+(si+1)+"《"+sg.title+"》"+sg.artist+"："+segSeq(si));
+  });
+  lines.push("");
+  lines.push("说明：第一部分系统自动判分；第二、三部分请由招聘方人工复核。");
+  document.getElementById("result-txt").value=lines.join("\n");
+  state.resultText=lines.join("\n");
+  show("view-result");
+}
+
+/* ============================================================
+ * 流程
+ * ============================================================ */
+function startTest(){
+  var name=document.getElementById("name-input").value.trim();
+  if(!name){ document.getElementById("landing-msg").textContent="请先填写姓名/编号。"; msg("landing-msg",true); return; }
+  if(isDone(name)){ document.getElementById("landing-msg").textContent="编号「"+name+"」已完成测试，每人仅限一次；如需重测请联系招聘方。"; msg("landing-msg",true); return; }
+  msg("landing-msg",false);
+  state.name=name;
+  state.contact=document.getElementById("contact-input").value.trim();
+  state.code=genCode();
+  state.p1Sel={}; state.p2Text={}; state.p3Segs={};
+  state.p1=sample(PART1,PART1_COUNT).map(function(q){
+    var sh=shuffle(q.opts);
+    return { url:q.url, q:q.q, shuffled:sh, correctIdx:sh.indexOf(q.ans), kind:q.ans };
+  });
+  state.p2=sample(SONGS,PART2_COUNT);
+  state.p3=sample(SONGS,PART3_COUNT);
+  renderPart1(); show("view-part1");
+}
+
+/* ===== 事件 ===== */
+document.getElementById("btn-start").addEventListener("click",startTest);
+document.getElementById("name-input").addEventListener("keydown",function(e){ if(e.key==="Enter") startTest(); });
+document.getElementById("btn-p1-submit").addEventListener("click",submitPart1);
+document.getElementById("btn-p2-start").addEventListener("click",function(){ renderPart2(); show("view-part2"); });
+document.getElementById("btn-p2-submit").addEventListener("click",submitPart2);
+document.getElementById("btn-p3-start").addEventListener("click",function(){ renderPart3(); show("view-part3"); });
+document.getElementById("btn-p3-submit").addEventListener("click",submitPart3);
+document.getElementById("btn-copy").addEventListener("click",function(){
+  var ta=document.getElementById("result-txt"); ta.select();
+  var done=function(){ msg("copy-msg",true); setTimeout(function(){ msg("copy-msg",false); },2200); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(done,function(){ try{document.execCommand("copy");done();}catch(e){} }); }
+  else{ try{document.execCommand("copy");done();}catch(e){} }
+});
+// 简历选择
+document.getElementById("btn-pick-resume").addEventListener("click",function(){ document.getElementById("resume-input").click(); });
+document.getElementById("resume-input").addEventListener("change",function(){
+  var f=this.files[0]; if(!f) return;
+  document.getElementById("resume-name").textContent=f.name;
+  document.getElementById("resume-name").classList.add("has");
+  state.resumeName=f.name;
+});
+// 现在递交简历并报名：打开汇总表（预填姓名/联系方式）
+document.getElementById("btn-submit-resume").addEventListener("click",function(){
+  document.getElementById("landing-msg").textContent="请先完成测试，再在结果页一键提交报名信息与简历（每人仅限一次）。";
+  msg("landing-msg",true);
+});
+</script>
+</body>
+</html>
