@@ -429,7 +429,7 @@ function prefillUrl(obj){
 var activeAudio=null;
 function createPlayer(url,label){
   var wrap=document.createElement("div"); wrap.className="player";
-  var audio=document.createElement("audio"); audio.src=url; audio.preload="metadata";
+  var audio=document.createElement("audio"); audio.src=url; audio.preload="metadata"; audio.referrerPolicy="no-referrer";
   var btn=document.createElement("button"); btn.type="button"; btn.className="play-btn"; btn.setAttribute("aria-label","播放");
   btn.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
   var eq=document.createElement("div"); eq.className="eq"; for(var i=0;i<5;i++) eq.appendChild(document.createElement("span"));
@@ -559,7 +559,7 @@ var _specState = {};              // si -> {canvas, labels, drag, start, cur, pe
 function getWave(si,url,cb){
   if(_waves[si]!==undefined){ cb(_waves[si]); return; }
   try{
-    fetch(url).then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); })
+    fetch(url,{referrerPolicy:'no-referrer'}).then(function(r){ if(!r.ok) throw 0; return r.arrayBuffer(); })
       .then(function(buf){
         var Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx) throw 0;
         return new Ctx().decodeAudioData(buf);
