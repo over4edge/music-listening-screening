@@ -222,8 +222,12 @@
         <input class="input" id="name-input" type="text" placeholder="例如：张三 / NM-0001" maxlength="30" autocomplete="off">
       </div>
       <div class="field">
-        <label for="contact-input">联系方式（电话 / 微信 / 邮箱）</label>
+        <label for="contact-input">联系方式（电话 / 微信）</label>
         <input class="input" id="contact-input" type="text" placeholder="用于招聘方联系你" maxlength="60" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="email-input">邮箱 *（用于接收筛选结果通知）</label>
+        <input class="input" id="email-input" type="email" placeholder="例如：name@example.com" maxlength="80" autocomplete="off">
       </div>
       <div class="field">
         <label>简历</label>
@@ -232,7 +236,7 @@
           <button type="button" class="file-btn" id="btn-pick-resume">选择文件</button>
           <input type="file" id="resume-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" hidden>
         </div>
-        <p class="hint">完成测试后，在结果页点击「一键提交到汇总表」，报名信息、测试结果会自动填好，届时上传简历即可（每人仅限提交一次）。</p>
+        <p class="hint">完成测试后，在结果页点击「一键提交到汇总表」，报名信息、邮箱与答卷链接会自动填好，届时上传简历即可（每人仅限提交一次）。</p>
       </div>
       <div class="center" style="margin-top:14px;">
         <button class="btn ghost block" id="btn-submit-resume" type="button" disabled>完成测试后 · 结果页一键提交</button>
@@ -382,7 +386,7 @@
       <div class="center" style="margin-top:18px;">
         <button class="btn block" id="btn-submit-all" type="button">一键提交到汇总表</button>
       </div>
-      <p class="hint">点击后打开招聘方汇总表，报名信息与测试码已自动填写，请上传简历并点击提交，结果将自动汇总。</p>
+      <p class="hint">点击后打开飞书提交表单，姓名、联系方式、邮箱与答卷链接已自动填写，请上传简历并提交。</p>
     </div>
     <div id="result-body"></div>
     <div class="card">
@@ -417,6 +421,7 @@
         <div class="rv-meta">
           <div>姓名 / 编号：<b id="rv-name">—</b></div>
           <div>联系方式：<b id="rv-contact">—</b></div>
+          <div>邮箱：<b id="rv-email">—</b></div>
           <div>完成时间：<span id="rv-ts">—</span></div>
         </div>
         <div class="rv-scorebox">
@@ -506,7 +511,7 @@ var FORM_URL = "https://g0iocpiqvf9.feishu.cn/share/base/shrcnBllVArFZmzPXO3HaqW
 /* ============================================================
  * 状态与工具
  * ============================================================ */
-var state = { name:"", contact:"", code:"", p1:[], p1Sel:{}, p1Score:0, p1Rate:0, p2:[], p2Text:{}, p3:[], p3Segs:{} };
+var state = { name:"", contact:"", email:"", code:"", p1:[], p1Sel:{}, p1Score:0, p1Rate:0, p2:[], p2Text:{}, p3:[], p3Segs:{} };
 
 function shuffle(arr){ var a=arr.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
 function sample(arr,n){ return shuffle(arr).slice(0,n); }
@@ -896,7 +901,7 @@ function decObj(s){
 }
 function buildReview(){
   return {
-    v:1, code:state.code, name:state.name, contact:state.contact,
+    v:1, code:state.code, name:state.name, contact:state.contact, email:state.email,
     ts:new Date().toLocaleString("zh-CN",{hour12:false}),
     p1score:state.p1Score, p1total:state.p1.length, p1rate:state.p1Rate,
     p1:state.p1.map(function(q,qi){ return { q:q.q, url:q.url, opts:q.shuffled, pick:state.p1Sel[qi], correct:q.correctIdx }; }),
@@ -919,6 +924,7 @@ function renderReview(d){
   document.getElementById("rv-code").textContent=d.code||"------";
   document.getElementById("rv-name").textContent=d.name||"—";
   document.getElementById("rv-contact").textContent=d.contact||"—";
+  document.getElementById("rv-email").textContent=d.email||"—";
   document.getElementById("rv-ts").textContent=d.ts||"—";
   var pct=Math.round((d.p1rate||0)*100), pass=(d.p1rate||0)>=PASS_RATE;
   document.getElementById("rv-score").textContent=(d.p1score||0)+"/"+(d.p1total||0)+" · "+pct+"%";
@@ -1022,7 +1028,7 @@ function showResult(){
   var v=document.getElementById("final-verdict"); v.className="verdict "+(pass?"pass":"fail"); v.textContent=pass?"通过听辨硬门槛":"未通过听辨硬门槛";
   document.getElementById("result-code").textContent=state.code;
   document.getElementById("btn-submit-all").onclick=function(){
-    window.open(prefillUrl({"姓名/编号":state.name,"联系方式":state.contact,"测试码":state.code,"测试结果":state.resultText||""}),"_blank");
+    window.open(prefillUrl({"姓名":state.name,"联系方式":state.contact,"邮箱":state.email,"网页版答卷链接":state.reviewUrl||""}),"_blank");
   };
 
   var body=document.getElementById("result-body"); body.innerHTML="";
@@ -1056,7 +1062,7 @@ function showResult(){
   lines.push("【音乐人力能力筛选 · 结果】");
   lines.push("测试码："+state.code);
   lines.push("网页版答卷："+(state.reviewUrl||""));
-  lines.push("姓名/编号："+state.name+(state.contact?" | 联系方式："+state.contact:""));
+  lines.push("姓名/编号："+state.name+(state.contact?" | 联系方式："+state.contact:"")+" | 邮箱："+(state.email||""));
   lines.push("第一部分 · 听辨硬门槛（"+state.p1Score+"/"+state.p1.length+"，得分率 "+pct+"%，"+(pass?"通过":"未通过")+"）：");
   state.p1.forEach(function(q,qi){
     var sel=state.p1Sel[qi];
@@ -1089,6 +1095,9 @@ function startTest(){
   msg("landing-msg",false);
   state.name=name;
   state.contact=document.getElementById("contact-input").value.trim();
+  var email=document.getElementById("email-input").value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ document.getElementById("landing-msg").textContent="请填写正确的邮箱（用于接收筛选结果通知）。"; msg("landing-msg",true); return; }
+  state.email=email;
   state.code=genCode();
   state.p1Sel={}; state.p2Text={}; state.p3Segs={};
   state.p1=sample(PART1,PART1_COUNT).map(function(q){
