@@ -260,7 +260,7 @@
       </div>
       <div class="linkrow">
         <button class="btn" id="btn-admin-open-link" type="button" style="padding:10px 18px;font-size:13.5px;">查看网页版答卷</button>
-        <button class="btn ghost" id="btn-admin-base" type="button" style="padding:10px 18px;font-size:13.5px;">打开飞书汇总表</button>
+        <button class="btn ghost" id="btn-admin-base" type="button" style="padding:10px 18px;font-size:13.5px;">打开飞书提交表单</button>
       </div>
       <p class="hint">无后端模式：答卷内容封装在链接里，粘贴链接即可看到排版好的网页版答卷，测试码用于核对身份。</p>
     </div>
@@ -1141,9 +1141,9 @@ document.getElementById("btn-copy-link").addEventListener("click",function(){
 });
 document.getElementById("btn-open-link").addEventListener("click",function(){ if(state.reviewUrl) window.open(state.reviewUrl,"_blank"); });
 
-/* ===== 首页招聘方：打开飞书汇总表 / 粘贴链接查看网页版答卷 ===== */
+/* ===== 首页招聘方：打开飞书提交表单 / 粘贴链接查看网页版答卷 ===== */
 document.getElementById("btn-admin-base").addEventListener("click",function(){
-  window.open("https://g0iocpiqvf9.feishu.cn/base/HMi9bm2LaaJkrOsX6SCctKb6nGg","_blank");
+  window.open(FORM_URL,"_blank");
 });
 function gotoReviewInput(){
   var v=document.getElementById("admin-link").value.trim(); if(!v) return;
