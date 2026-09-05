@@ -187,14 +187,25 @@
   .rv-subtotal{display:flex;gap:22px;flex-wrap:wrap;margin-top:16px;padding:12px 16px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;font-size:14px;}
   .rv-subtotal b{color:var(--signal-soft);font-variant-numeric:tabular-nums;font-size:16px;}
   .rv-report{width:100%;min-height:150px;margin-top:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.65;white-space:pre-wrap;}
+  /* 打印专用成绩单：屏幕隐藏，仅打印时显示 */
+  #rv-print-sheet{display:none;}
+  .ps-title{font-size:21px;font-weight:900;text-align:center;letter-spacing:2px;margin:0 0 4px;}
+  .ps-sub{text-align:center;font-size:11.5px;color:#555;letter-spacing:1px;margin-bottom:14px;}
+  .ps-head{font-size:12.5px;line-height:1.9;border:1px solid #999;border-radius:8px;padding:9px 12px;margin-bottom:6px;}
+  .ps-sec{font-weight:800;font-size:13.5px;margin:13px 0 5px;padding-bottom:3px;border-bottom:1px solid #999;}
+  .ps-row{font-size:12.5px;line-height:1.85;margin:2px 0;}
+  .ps-ans{color:#444;font-size:11.5px;}
+  .ps-total{font-weight:800;font-size:13.5px;margin-top:9px;}
   .linkrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
   @media print{
-    header.apphead,.apphead,#rv-grade-card,.footer,.btn{display:none!important;}
+    header.apphead,.apphead,.footer,.btn{display:none!important;}
     body{background:#fff;color:#111;}
     .shell{max-width:100%;}
-    .card,.rv-q,.rv-song{break-inside:avoid;border-color:#ccc!important;background:#fff!important;}
-    .rv-codebig b,.rv-song-h{color:#333!important;}
     .view{display:block!important;}
+    /* 答卷批改界面（信息卡/逐题/播放器/打分控件/评定卡）打印时全部隐藏，只输出成绩单 */
+    #view-review>*{display:none!important;}
+    #rv-print-sheet{display:block!important;}
+    #rv-print-sheet .ps-row,#rv-print-sheet .ps-sec{break-inside:avoid;}
   }
   @media (max-width:480px){
     .shell{padding:0 14px 48px;}
@@ -464,6 +475,7 @@
       </div>
       <div class="msg ok" id="rv-report-msg">成绩单已复制，可粘贴到飞书表「成绩单」列。</div>
     </div>
+    <div id="rv-print-sheet" aria-hidden="true"></div>
   </section>
 
 </main>
@@ -951,6 +963,7 @@ function saveDraft(){
   var k=draftKey(); if(!k) return;
   rvDraft.g=gradeVal(); rvDraft.note=(document.getElementById("rv-note")||{value:""}).value||"";
   try{ localStorage.setItem(k,JSON.stringify(rvDraft)); }catch(e){}
+  renderPrintSheet();
 }
 function getR(part,i){ return (rvDraft[part]&&rvDraft[part][i])||{s:0,n:""}; }
 function sumRate(part){ var s=0,o=rvDraft[part]||{}; Object.keys(o).forEach(function(k){ s+=Number(o[k].s)||0; }); return s; }
@@ -959,6 +972,7 @@ function refreshSubtotal(){
   var p2=sumRate("p2"), p3=sumRate("p3");
   var set=function(id,v){var el=document.getElementById(id); if(el) el.textContent=v;};
   set("rt-p2",p2); set("rt-p3",p3); set("rt-all",p2+p3);
+  renderPrintSheet();
 }
 function makeRater(part,idx,max){
   var wrap=document.createElement("div"); wrap.className="rv-rate";
@@ -1004,6 +1018,34 @@ function buildReportText(){
   var note=(document.getElementById("rv-note").value||"").trim();
   if(note) L.push("综合评语："+note);
   return L.join("\n");
+}
+function psEsc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+// 打印 / 存 PDF 用的精简成绩单（不含播放器、打分按钮等交互控件）
+function renderPrintSheet(){
+  var box=document.getElementById("rv-print-sheet"); if(!box||!curReview) return;
+  var d=curReview, pct=Math.round((d.p1rate||0)*100), pass1=(d.p1rate||0)>=PASS_RATE, h=[];
+  h.push('<div class="ps-title">音乐人力能力筛选 · 成绩单</div>');
+  h.push('<div class="ps-sub">LISTENING SCREENING · 听辨能力硬门槛 · 每人随机抽题</div>');
+  h.push('<div class="ps-head"><b>姓名 / 编号：</b>'+psEsc(d.name)+'　<b>测试码：</b>'+psEsc(d.code)
+    +'<br><b>联系方式：</b>'+psEsc(d.contact||"—")+'　<b>邮箱：</b>'+psEsc(d.email||"—")
+    +'<br><b>完成时间：</b>'+psEsc(d.ts||"—")+'</div>');
+  h.push('<div class="ps-sec">第一部分 · 听辨硬门槛</div>');
+  h.push('<div class="ps-row">'+(d.p1score||0)+'/'+(d.p1total||0)+'（'+pct+'%）· '+(pass1?'<b>通过门槛</b>':'<b>未通过门槛</b>')+'</div>');
+  var p2=sumRate("p2");
+  h.push('<div class="ps-sec">第二部分 · 整体听感　得分 '+p2+' / 25</div>');
+  (d.p2||[]).forEach(function(it,i){ var r=getR("p2",i);
+    h.push('<div class="ps-row">'+(i+1)+'. 《'+psEsc(it.title)+'》'+psEsc(it.artist||"")+' — <b>'+r.s+'/5</b>'+(r.n?'　简评：'+psEsc(r.n):'')+'</div>'); });
+  var p3=sumRate("p3");
+  h.push('<div class="ps-sec">第三部分 · 曲式结构分析　得分 '+p3+' / 20</div>');
+  (d.p3||[]).forEach(function(it,i){ var r=getR("p3",i);
+    var seq=(it.segs||[]).map(function(s){return s.label+"("+fmt(s.start)+"–"+fmt(s.end)+")";}).join(" → ");
+    h.push('<div class="ps-row">'+(i+1)+'. 《'+psEsc(it.title)+'》'+psEsc(it.artist||"")+(it.full?"（完整时长）":"（片段）")+' — <b>'+r.s+'/10</b>'+(r.n?'　简评：'+psEsc(r.n):'')
+      +'<br><span class="ps-ans">候选人标注：'+psEsc(seq||"未标注段落")+'</span></div>'); });
+  h.push('<div class="ps-total">主观题合计（Part2 + Part3）：'+(p2+p3)+' / 45</div>');
+  h.push('<div class="ps-total">综合评定：'+psEsc(gradeVal()||"（未评定）")+'</div>');
+  var note=(document.getElementById("rv-note")||{value:""}).value||"";
+  h.push('<div class="ps-row" style="margin-top:7px;"><b>综合评语：</b>'+psEsc(note.trim()||"—")+'</div>');
+  box.innerHTML=h.join("");
 }
 function renderReview(d){
   curReview=d; loadDraft();
@@ -1267,7 +1309,7 @@ document.getElementById("btn-rv-report").addEventListener("click",function(){
 });
 document.querySelectorAll('input[name="rvgrade"]').forEach(function(r){ r.addEventListener("change",saveDraft); });
 document.getElementById("rv-note").addEventListener("input",saveDraft);
-document.getElementById("btn-rv-print").addEventListener("click",function(){ window.print(); });
+document.getElementById("btn-rv-print").addEventListener("click",function(){ renderPrintSheet(); window.print(); });
 document.getElementById("btn-rv-back").addEventListener("click",function(){ location.hash=""; show("view-landing"); });
 
 /* ===== 启动路由：URL 带 #r= 时直接渲染网页版答卷 ===== */
