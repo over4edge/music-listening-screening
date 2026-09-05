@@ -176,6 +176,17 @@
   .rv-grade-row{display:flex;gap:22px;margin-top:14px;font-size:14.5px;flex-wrap:wrap;}
   .rv-grade-row label{display:flex;align-items:center;gap:7px;cursor:pointer;}
   .rv-grade-row input{accent-color:var(--signal);width:17px;height:17px;}
+  .rv-rate{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;}
+  .rv-rate .rt-label{font-size:12.5px;color:var(--muted);margin-right:2px;}
+  .rv-rate .rt-chip{min-width:30px;height:28px;padding:0 8px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;user-select:none;transition:all .12s;}
+  .rv-rate .rt-chip:hover{border-color:var(--signal);}
+  .rv-rate .rt-chip.on{background:var(--signal);border-color:var(--signal);color:#12161c;}
+  .rv-rate .rt-max{font-size:12px;color:var(--muted);}
+  .rv-note-in{flex:1;min-width:150px;margin-left:6px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:7px 10px;font-size:13px;}
+  .rv-note-in:focus{outline:none;border-color:var(--signal);}
+  .rv-subtotal{display:flex;gap:22px;flex-wrap:wrap;margin-top:16px;padding:12px 16px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;font-size:14px;}
+  .rv-subtotal b{color:var(--signal-soft);font-variant-numeric:tabular-nums;font-size:16px;}
+  .rv-report{width:100%;min-height:150px;margin-top:12px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.65;white-space:pre-wrap;}
   .linkrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
   @media print{
     header.apphead,.apphead,#rv-grade-card,.footer,.btn{display:none!important;}
@@ -433,17 +444,25 @@
     <div id="rv-body"></div>
     <div class="card" id="rv-grade-card">
       <h2>招聘方人工评定</h2>
-      <p class="sub">评定与备注仅在本页显示，可点「打印 / 存为 PDF」存档，不会回传到候选人链接。</p>
+      <p class="sub">在上方 Part 2（每首 1–5 分）、Part 3（每首 1–10 分）逐首打分，可写简评；打分与评定按测试码自动暂存本机、不会回传候选人链接。</p>
       <div class="rv-grade-row">
         <label><input type="radio" name="rvgrade" value="通过"> 通过</label>
         <label><input type="radio" name="rvgrade" value="待定"> 待定</label>
         <label><input type="radio" name="rvgrade" value="不通过"> 不通过</label>
       </div>
-      <textarea class="input" id="rv-note" placeholder="批改备注 / 综合评语（可选）" style="min-height:84px;margin-top:14px;"></textarea>
+      <textarea class="input" id="rv-note" placeholder="批改备注 / 综合评语（可选，会进入成绩单）" style="min-height:84px;margin-top:14px;"></textarea>
+      <div class="rv-subtotal" id="rv-subtotal">
+        <span>Part 2 整体听感：<b id="rt-p2">0</b>/25</span>
+        <span>Part 3 曲式分析：<b id="rt-p3">0</b>/20</span>
+        <span>主观题合计：<b id="rt-all">0</b>/45</span>
+      </div>
+      <textarea class="input rv-report" id="rv-report" readonly placeholder="点下方「生成并复制成绩单」，此处出现成绩单文本——复制后粘贴到飞书表「成绩单」列，即可随通知邮件一并发给候选人。"></textarea>
       <div class="linkrow">
+        <button class="btn" id="btn-rv-report" type="button" style="padding:11px 20px;font-size:14px;">生成并复制成绩单</button>
         <button class="btn" id="btn-rv-print" type="button" style="padding:11px 20px;font-size:14px;">打印 / 存为 PDF</button>
         <button class="btn ghost" id="btn-rv-back" type="button" style="padding:11px 20px;font-size:14px;">返回首页</button>
       </div>
+      <div class="msg ok" id="rv-report-msg">成绩单已复制，可粘贴到飞书表「成绩单」列。</div>
     </div>
   </section>
 
@@ -920,7 +939,75 @@ function reviewRange(audio,start,end){
   try{ audio.currentTime=start; }catch(e){}
   audio.play().catch(function(){});
 }
+/* ===== 招聘方人工打分：Part2 每首1-5、Part3 每首1-10，按测试码本机暂存 ===== */
+var curReview=null, rvDraft={p2:{},p3:{},g:"",note:""};
+function draftKey(){ return curReview?("rvdraft:"+(curReview.code||"nocode")):null; }
+function loadDraft(){
+  rvDraft={p2:{},p3:{},g:"",note:""};
+  var k=draftKey(); if(!k) return;
+  try{ var s=JSON.parse(localStorage.getItem(k)||"null"); if(s){ rvDraft=Object.assign(rvDraft,s); rvDraft.p2=rvDraft.p2||{}; rvDraft.p3=rvDraft.p3||{}; } }catch(e){}
+}
+function saveDraft(){
+  var k=draftKey(); if(!k) return;
+  rvDraft.g=gradeVal(); rvDraft.note=(document.getElementById("rv-note")||{value:""}).value||"";
+  try{ localStorage.setItem(k,JSON.stringify(rvDraft)); }catch(e){}
+}
+function getR(part,i){ return (rvDraft[part]&&rvDraft[part][i])||{s:0,n:""}; }
+function sumRate(part){ var s=0,o=rvDraft[part]||{}; Object.keys(o).forEach(function(k){ s+=Number(o[k].s)||0; }); return s; }
+function gradeVal(){ var g=document.querySelector('input[name="rvgrade"]:checked'); return g?g.value:""; }
+function refreshSubtotal(){
+  var p2=sumRate("p2"), p3=sumRate("p3");
+  var set=function(id,v){var el=document.getElementById(id); if(el) el.textContent=v;};
+  set("rt-p2",p2); set("rt-p3",p3); set("rt-all",p2+p3);
+}
+function makeRater(part,idx,max){
+  var wrap=document.createElement("div"); wrap.className="rv-rate";
+  var lab=document.createElement("span"); lab.className="rt-label"; lab.textContent="打分"; wrap.appendChild(lab);
+  var cur=getR(part,idx).s||0, chips=[];
+  for(var v=1;v<=max;v++){
+    (function(v){
+      var c=document.createElement("span"); c.className="rt-chip"+(v<=cur?" on":""); c.textContent=v;
+      c.addEventListener("click",function(){
+        if(!rvDraft[part][idx]) rvDraft[part][idx]={s:0,n:""};
+        rvDraft[part][idx].s=(rvDraft[part][idx].s===v?0:v);
+        var now=rvDraft[part][idx].s;
+        chips.forEach(function(ch,ci){ ch.classList.toggle("on",(ci+1)<=now); });
+        saveDraft(); refreshSubtotal();
+      });
+      chips.push(c); wrap.appendChild(c);
+    })(v);
+  }
+  var mx=document.createElement("span"); mx.className="rt-max"; mx.textContent="/"+max+" 分"; wrap.appendChild(mx);
+  var ni=document.createElement("input"); ni.className="rv-note-in"; ni.type="text"; ni.maxLength=80; ni.placeholder="该首简评（可选，会进成绩单）";
+  ni.value=getR(part,idx).n||"";
+  ni.addEventListener("input",function(){
+    if(!rvDraft[part][idx]) rvDraft[part][idx]={s:0,n:""};
+    rvDraft[part][idx].n=ni.value.trim(); saveDraft();
+  });
+  wrap.appendChild(ni);
+  return wrap;
+}
+function buildReportText(){
+  var d=curReview; if(!d) return "";
+  var L=[];
+  L.push("【音乐人力能力筛选 · 成绩单】");
+  L.push("姓名："+(d.name||"—")+"　测试码："+(d.code||"—"));
+  var pct=Math.round((d.p1rate||0)*100), pass1=(d.p1rate||0)>=PASS_RATE;
+  L.push("第一部分 · 听辨硬门槛："+(d.p1score||0)+"/"+(d.p1total||0)+"（"+pct+"%）· "+(pass1?"通过":"未通过"));
+  var p2=sumRate("p2"), p3=sumRate("p3");
+  L.push("第二部分 · 整体听感："+p2+"/25");
+  (d.p2||[]).forEach(function(it,i){ var r=getR("p2",i); L.push("  "+(i+1)+".《"+it.title+"》"+(it.artist||"")+" — "+r.s+"/5"+(r.n?"："+r.n:"")); });
+  L.push("第三部分 · 曲式结构分析："+p3+"/20");
+  (d.p3||[]).forEach(function(it,i){ var r=getR("p3",i); L.push("  "+(i+1)+".《"+it.title+"》"+(it.artist||"")+(it.full?"（完整时长）":"（片段）")+" — "+r.s+"/10"+(r.n?"："+r.n:"")); });
+  L.push("主观题合计（Part2+Part3）："+(p2+p3)+"/45");
+  L.push("综合评定："+(gradeVal()||"（未评定）"));
+  var note=(document.getElementById("rv-note").value||"").trim();
+  if(note) L.push("综合评语："+note);
+  return L.join("\n");
+}
 function renderReview(d){
+  curReview=d; loadDraft();
+  var rp=document.getElementById("rv-report"); if(rp) rp.value="";
   document.getElementById("rv-code").textContent=d.code||"------";
   document.getElementById("rv-name").textContent=d.name||"—";
   document.getElementById("rv-contact").textContent=d.contact||"—";
@@ -966,7 +1053,9 @@ function renderReview(d){
     var hh=document.createElement("div"); hh.className="rv-song-h"; hh.textContent="曲目"+(si+1)+"《"+it.title+"》"+it.artist;
     var p2p=createPlayer(it.url,"30 秒片段（复听）");
     var tt=document.createElement("div"); tt.className="rv-song-t"; tt.textContent=it.ans||"（未填写）";
-    item.appendChild(hh); if(it.url) item.appendChild(p2p.el); item.appendChild(tt); s2.appendChild(item);
+    item.appendChild(hh); if(it.url) item.appendChild(p2p.el); item.appendChild(tt);
+    item.appendChild(makeRater("p2",si,5));
+    s2.appendChild(item);
   });
   body.appendChild(s2);
 
@@ -1000,12 +1089,15 @@ function renderReview(d){
       seq.textContent="结构序列："+segs.map(function(s){return s.label+"("+fmt(s.start)+"-"+fmt(s.end)+")";}).join(" → ");
       item.appendChild(seq);
     }
+    item.appendChild(makeRater("p3",si,10));
     s3.appendChild(item);
   });
   body.appendChild(s3);
-  // 重置人工评定
-  var grp=document.getElementsByName("rvgrade"); for(var i=0;i<grp.length;i++) grp[i].checked=false;
-  document.getElementById("rv-note").value="";
+  // 恢复人工评定草稿并刷新小计
+  var grp=document.getElementsByName("rvgrade");
+  for(var i=0;i<grp.length;i++) grp[i].checked=(grp[i].value===rvDraft.g);
+  document.getElementById("rv-note").value=rvDraft.note||"";
+  refreshSubtotal();
 }
 function openReviewHash(h){
   var m=String(h||"").match(/#r=(.+)$/);
@@ -1167,6 +1259,14 @@ document.getElementById("btn-admin-open-link").addEventListener("click",gotoRevi
 document.getElementById("admin-link").addEventListener("keydown",function(e){ if(e.key==="Enter") gotoReviewInput(); });
 
 /* ===== 网页版答卷查看页 ===== */
+document.getElementById("btn-rv-report").addEventListener("click",function(){
+  var txt=buildReportText(), ta=document.getElementById("rv-report");
+  ta.value=txt;
+  copyText(txt,function(){ msg("rv-report-msg",true); setTimeout(function(){ msg("rv-report-msg",false); },2600); });
+  ta.focus(); ta.select();
+});
+document.querySelectorAll('input[name="rvgrade"]').forEach(function(r){ r.addEventListener("change",saveDraft); });
+document.getElementById("rv-note").addEventListener("input",saveDraft);
 document.getElementById("btn-rv-print").addEventListener("click",function(){ window.print(); });
 document.getElementById("btn-rv-back").addEventListener("click",function(){ location.hash=""; show("view-landing"); });
 
