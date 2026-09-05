@@ -201,8 +201,9 @@
     header.apphead,.apphead,.footer,.btn{display:none!important;}
     body{background:#fff;color:#111;}
     .shell{max-width:100%;}
-    .view{display:block!important;}
-    /* 答卷批改界面（信息卡/逐题/播放器/打分控件/评定卡）打印时全部隐藏，只输出成绩单 */
+    /* 只打印网页版答卷视图：其它视图（首页/答题/结果页）全部隐藏，打印件直接从成绩单标题开始 */
+    .view{display:none!important;}
+    #view-review{display:block!important;}
     #view-review>*{display:none!important;}
     #rv-print-sheet{display:block!important;}
     #rv-print-sheet .ps-row,#rv-print-sheet .ps-sec{break-inside:avoid;}
