@@ -168,7 +168,10 @@
   .rv-song-t{font-size:13.5px;color:#ddd7cb;margin-top:8px;white-space:pre-wrap;}
   .rv-empty{font-size:13px;color:var(--muted);margin-top:8px;}
   .rv-timeline{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
-  .rv-seg{font-size:12.5px;font-weight:700;border:1.5px solid;border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums;}
+  .rv-seg{font-size:12.5px;font-weight:700;border:1.5px solid;border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums;cursor:pointer;transition:background .15s,transform .1s;user-select:none;}
+  .rv-seg:hover{background:rgba(255,255,255,.08);}
+  .rv-seg:active{transform:scale(.96);}
+  .rv-q .player,.rv-song .player{margin-top:10px;}
   .rv-seq{font-size:12.5px;color:var(--muted);margin-top:10px;}
   .rv-grade-row{display:flex;gap:22px;margin-top:14px;font-size:14.5px;flex-wrap:wrap;}
   .rv-grade-row label{display:flex;align-items:center;gap:7px;cursor:pointer;}
@@ -554,6 +557,19 @@ function createPlayer(url,label){
   audio.addEventListener("play",function(){ activeAudio=audio; setP(true); });
   audio.addEventListener("pause",function(){ setP(false); });
   audio.addEventListener("ended",function(){ setP(false); fill.style.width="100%"; });
+  // 进度条：点击 / 拖动跳转（seek）
+  function seekAt(clientX){
+    var r=prog.getBoundingClientRect(); if(!r.width||!(isFinite(audio.duration)&&audio.duration>0)) return;
+    var ratio=Math.max(0,Math.min(1,(clientX-r.left)/r.width));
+    try{ audio.currentTime=ratio*audio.duration; }catch(e){}
+    fill.style.width=(ratio*100)+"%"; pt.textContent=fmt(ratio*audio.duration)+" / "+fmt(audio.duration);
+  }
+  var seeking=false;
+  prog.style.cursor="pointer"; prog.setAttribute("title","点击或拖动可快进 / 后退");
+  prog.addEventListener("pointerdown",function(e){ seeking=true; try{prog.setPointerCapture(e.pointerId);}catch(x){} seekAt(e.clientX); });
+  prog.addEventListener("pointermove",function(e){ if(seeking) seekAt(e.clientX); });
+  prog.addEventListener("pointerup",function(){ seeking=false; });
+  prog.addEventListener("pointercancel",function(){ seeking=false; });
   btn.addEventListener("click",function(){
     if(audio.paused){ if(activeAudio&&activeAudio!==audio){try{activeAudio.pause();}catch(e){}} audio.play().catch(function(){}); } else audio.pause();
   });
@@ -882,12 +898,22 @@ function buildReview(){
     v:1, code:state.code, name:state.name, contact:state.contact,
     ts:new Date().toLocaleString("zh-CN",{hour12:false}),
     p1score:state.p1Score, p1total:state.p1.length, p1rate:state.p1Rate,
-    p1:state.p1.map(function(q,qi){ return { q:q.q, opts:q.shuffled, pick:state.p1Sel[qi], correct:q.correctIdx }; }),
-    p2:state.p2.map(function(sg,si){ return { title:sg.title, artist:sg.artist, ans:state.p2Text[si]||"" }; }),
-    p3:state.p3.map(function(sg,si){ return { title:sg.title, artist:sg.artist, full:!!sg._full, segs:(state.p3Segs[si]||[]).slice().sort(function(a,b){return a.start-b.start;}) }; })
+    p1:state.p1.map(function(q,qi){ return { q:q.q, url:q.url, opts:q.shuffled, pick:state.p1Sel[qi], correct:q.correctIdx }; }),
+    p2:state.p2.map(function(sg,si){ return { title:sg.title, artist:sg.artist, url:sg.clip, ans:state.p2Text[si]||"" }; }),
+    p3:state.p3.map(function(sg,si){ var isFull=!!sg._full; return { title:sg.title, artist:sg.artist, full:isFull, url:isFull?sg._full:sg.struct, segs:(state.p3Segs[si]||[]).slice().sort(function(a,b){return a.start-b.start;}) }; })
   };
 }
 function reviewUrl(o){ return location.origin+location.pathname+"#r="+encObj(o); }
+// 网页版答卷：从指定区间开始试听，到 end 自动停
+function reviewRange(audio,start,end){
+  if(!audio) return;
+  try{ audio.pause(); }catch(e){}
+  if(audio._rvStop){ audio.removeEventListener("timeupdate",audio._rvStop); }
+  var stop=function(){ if(audio.currentTime>=end||audio.ended){ try{audio.pause();}catch(x){} audio.removeEventListener("timeupdate",stop); audio._rvStop=null; } };
+  audio._rvStop=stop; audio.addEventListener("timeupdate",stop);
+  try{ audio.currentTime=start; }catch(e){}
+  audio.play().catch(function(){});
+}
 function renderReview(d){
   document.getElementById("rv-code").textContent=d.code||"------";
   document.getElementById("rv-name").textContent=d.name||"—";
@@ -910,6 +936,7 @@ function renderReview(d){
     var qq=document.createElement("span"); qq.className="rv-qq"; qq.textContent=it.q;
     var tag=document.createElement("span"); tag.className="rv-qtag "+(ok?"ok":"bad"); tag.textContent=ok?"正确":"错误";
     head.appendChild(no); head.appendChild(qq); head.appendChild(tag); q.appendChild(head);
+    if(it.url) q.appendChild(createPlayer(it.url,"第 "+(qi+1)+" 段音频（复听）").el);
     it.opts.forEach(function(op,oi){
       var line=document.createElement("div"); line.className="rv-opt";
       var isPick=oi===it.pick, isCor=oi===it.correct;
@@ -930,8 +957,9 @@ function renderReview(d){
   (d.p2||[]).forEach(function(it,si){
     var item=document.createElement("div"); item.className="rv-song";
     var hh=document.createElement("div"); hh.className="rv-song-h"; hh.textContent="曲目"+(si+1)+"《"+it.title+"》"+it.artist;
+    var p2p=createPlayer(it.url,"30 秒片段（复听）");
     var tt=document.createElement("div"); tt.className="rv-song-t"; tt.textContent=it.ans||"（未填写）";
-    item.appendChild(hh); item.appendChild(tt); s2.appendChild(item);
+    item.appendChild(hh); if(it.url) item.appendChild(p2p.el); item.appendChild(tt); s2.appendChild(item);
   });
   body.appendChild(s2);
 
@@ -943,15 +971,21 @@ function renderReview(d){
     var hh=document.createElement("div"); hh.className="rv-song-h";
     hh.textContent="曲目"+(si+1)+"《"+it.title+"》"+it.artist+(it.full?" · 完整时长":" · 60 秒片段");
     item.appendChild(hh);
+    var p3p=createPlayer(it.url, it.full?"完整歌曲（复听 · 进度条可拖动）":"60 秒结构片段（复听 · 进度条可拖动）");
+    if(it.url) item.appendChild(p3p.el);
     var segs=it.segs||[];
     if(!segs.length){
       var e=document.createElement("div"); e.className="rv-empty"; e.textContent="未标注段落（候选人空白提交）"; item.appendChild(e);
     }else{
+      var tip=document.createElement("div"); tip.className="rv-seq"; tip.textContent="点击下方结构标签，可从该区间开始试听验证：";
+      item.appendChild(tip);
       var tl=document.createElement("div"); tl.className="rv-timeline";
       segs.forEach(function(sg,ki){
         var chip=document.createElement("span"); chip.className="rv-seg";
         var c=RV_COLORS[ki%RV_COLORS.length]; chip.style.borderColor=c; chip.style.color=c;
         chip.textContent=sg.label+" · "+fmt(sg.start)+"–"+fmt(sg.end);
+        chip.title="从 "+fmt(sg.start)+" 播放到 "+fmt(sg.end);
+        chip.addEventListener("click",function(){ reviewRange(p3p.audio,sg.start,sg.end); });
         tl.appendChild(chip);
       });
       item.appendChild(tl);
