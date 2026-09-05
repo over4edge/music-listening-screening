@@ -140,6 +140,48 @@
   .seg-del{flex:none;width:26px;height:26px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;font-family:inherit;}
   .seg-del:hover{color:var(--bad);background:rgba(217,106,90,.12);}
   .seg-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:4px 0;}
+  /* ===== 网页版答卷查看（招聘方） ===== */
+  .rv-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:14px;}
+  .rv-codebig{display:flex;flex-direction:column;gap:4px;}
+  .rv-codebig span{font-size:11px;color:var(--muted);letter-spacing:1px;}
+  .rv-codebig b{font-size:28px;font-weight:900;letter-spacing:4px;color:var(--signal-soft);font-variant-numeric:tabular-nums;}
+  .rv-meta{flex:1;min-width:200px;font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;gap:5px;}
+  .rv-meta b{color:var(--ink);font-weight:700;}
+  .rv-scorebox{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .rv-score{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .rv-badge{font-size:13px;font-weight:700;padding:4px 14px;border-radius:999px;}
+  .rv-badge.ok{background:rgba(111,191,138,.16);color:var(--ok);border:1px solid var(--ok);}
+  .rv-badge.bad{background:rgba(217,106,90,.16);color:var(--bad);border:1px solid var(--bad);}
+  .rv-list{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+  .rv-q{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .rv-qhead{display:flex;align-items:center;gap:10px;}
+  .rv-qno{width:26px;height:26px;flex:none;border-radius:8px;background:var(--signal);color:#12161c;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .rv-qq{flex:1;font-size:14px;font-weight:700;}
+  .rv-qtag{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;flex:none;}
+  .rv-qtag.ok{color:var(--ok);background:rgba(111,191,138,.14);}
+  .rv-qtag.bad{color:var(--bad);background:rgba(217,106,90,.14);}
+  .rv-opt{margin-top:8px;font-size:13.5px;padding:8px 12px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid transparent;color:#cfc9bd;}
+  .rv-opt.correct{border-color:var(--ok);background:rgba(111,191,138,.10);color:#bce7cb;font-weight:700;}
+  .rv-opt.wrongpick{border-color:var(--bad);background:rgba(217,106,90,.10);color:#f2b8ae;}
+  .rv-song{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:12px;}
+  .rv-song-h{font-size:14px;font-weight:700;color:var(--signal-soft);}
+  .rv-song-t{font-size:13.5px;color:#ddd7cb;margin-top:8px;white-space:pre-wrap;}
+  .rv-empty{font-size:13px;color:var(--muted);margin-top:8px;}
+  .rv-timeline{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .rv-seg{font-size:12.5px;font-weight:700;border:1.5px solid;border-radius:999px;padding:4px 12px;font-variant-numeric:tabular-nums;}
+  .rv-seq{font-size:12.5px;color:var(--muted);margin-top:10px;}
+  .rv-grade-row{display:flex;gap:22px;margin-top:14px;font-size:14.5px;flex-wrap:wrap;}
+  .rv-grade-row label{display:flex;align-items:center;gap:7px;cursor:pointer;}
+  .rv-grade-row input{accent-color:var(--signal);width:17px;height:17px;}
+  .linkrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
+  @media print{
+    header.apphead,.apphead,#rv-grade-card,.footer,.btn{display:none!important;}
+    body{background:#fff;color:#111;}
+    .shell{max-width:100%;}
+    .card,.rv-q,.rv-song{break-inside:avoid;border-color:#ccc!important;background:#fff!important;}
+    .rv-codebig b,.rv-song-h{color:#333!important;}
+    .view{display:block!important;}
+  }
   @media (max-width:480px){
     .shell{padding:0 14px 48px;}
     .hero h2{font-size:22px;}
@@ -207,10 +249,17 @@
       </div>
     </div>
     <div class="card">
-      <span class="kicker">内部功能</span>
-      <div class="center" style="margin-top:4px;">
-        <button class="btn ghost block" id="btn-admin" type="button">招聘方入口 · 查看答卷汇总</button>
+      <span class="kicker">招聘方 · 查看答卷</span>
+      <h2 style="margin-top:6px;">网页版答卷查询</h2>
+      <div class="field" style="margin-top:12px;">
+        <label>粘贴候选人发给你的「网页版答卷链接」</label>
+        <input class="input" id="admin-link" type="text" placeholder="https://…#r=xxxx（结果页可复制）" autocomplete="off">
       </div>
+      <div class="linkrow">
+        <button class="btn" id="btn-admin-open-link" type="button" style="padding:10px 18px;font-size:13.5px;">查看网页版答卷</button>
+        <button class="btn ghost" id="btn-admin-base" type="button" style="padding:10px 18px;font-size:13.5px;">打开飞书汇总表</button>
+      </div>
+      <p class="hint">无后端模式：答卷内容封装在链接里，粘贴链接即可看到排版好的网页版答卷，测试码用于核对身份。</p>
     </div>
   </section>
 
@@ -334,6 +383,16 @@
     </div>
     <div id="result-body"></div>
     <div class="card">
+      <h2>网页版答卷链接</h2>
+      <p class="sub">招聘方点开此链接即可看到排版好的网页版答卷（无需登录、无需后端）。请复制后连同测试码一起提交到汇总表或发给对接人。</p>
+      <input class="input" id="review-link" readonly style="font-size:12px;margin-top:12px;font-family:monospace;">
+      <div class="linkrow">
+        <button class="btn" id="btn-copy-link" type="button" style="padding:11px 20px;font-size:14px;">复制答卷链接</button>
+        <button class="btn ghost" id="btn-open-link" type="button" style="padding:11px 20px;font-size:14px;">预览网页版答卷</button>
+      </div>
+      <div class="msg ok" id="link-msg">已复制到剪贴板。</div>
+    </div>
+    <div class="card">
       <h2>复制结果文本</h2>
       <p class="sub">也可以把下面文本复制后发送给招聘对接人。</p>
       <textarea class="txtout" id="result-txt" readonly></textarea>
@@ -343,6 +402,41 @@
       <div class="msg ok" id="copy-msg">已复制到剪贴板。</div>
     </div>
     <p class="footer">本测试用于音频标注岗位人力筛选 · 每位候选人题目组合随机生成</p>
+  </section>
+
+  <!-- ===== 网页版答卷查看（招聘方） ===== -->
+  <section id="view-review" class="view">
+    <div class="card">
+      <span class="kicker">招聘方 · 网页版答卷</span>
+      <h2 style="margin-top:6px;">候选人答卷</h2>
+      <div class="rv-top">
+        <div class="rv-codebig"><span>测试码（核对身份）</span><b id="rv-code">------</b></div>
+        <div class="rv-meta">
+          <div>姓名 / 编号：<b id="rv-name">—</b></div>
+          <div>联系方式：<b id="rv-contact">—</b></div>
+          <div>完成时间：<span id="rv-ts">—</span></div>
+        </div>
+        <div class="rv-scorebox">
+          <div class="rv-score" id="rv-score">0/0</div>
+          <span class="rv-badge" id="rv-verdict">—</span>
+        </div>
+      </div>
+    </div>
+    <div id="rv-body"></div>
+    <div class="card" id="rv-grade-card">
+      <h2>招聘方人工评定</h2>
+      <p class="sub">评定与备注仅在本页显示，可点「打印 / 存为 PDF」存档，不会回传到候选人链接。</p>
+      <div class="rv-grade-row">
+        <label><input type="radio" name="rvgrade" value="通过"> 通过</label>
+        <label><input type="radio" name="rvgrade" value="待定"> 待定</label>
+        <label><input type="radio" name="rvgrade" value="不通过"> 不通过</label>
+      </div>
+      <textarea class="input" id="rv-note" placeholder="批改备注 / 综合评语（可选）" style="min-height:84px;margin-top:14px;"></textarea>
+      <div class="linkrow">
+        <button class="btn" id="btn-rv-print" type="button" style="padding:11px 20px;font-size:14px;">打印 / 存为 PDF</button>
+        <button class="btn ghost" id="btn-rv-back" type="button" style="padding:11px 20px;font-size:14px;">返回首页</button>
+      </div>
+    </div>
   </section>
 
 </main>
@@ -771,10 +865,121 @@ function submitPart3(){
 }
 
 /* ============================================================
+ * 网页版答卷（自包含链接：数据编码进 URL hash，零后端）
+ * ============================================================ */
+var RV_COLORS=["#4f8cff","#ff8c42","#38cfa0","#ff5d73","#b07cff","#ffcf3f","#5ad8a6","#f759ab"];
+function encObj(o){
+  var b64=btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+  return b64.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function decObj(s){
+  s=String(s).replace(/-/g,"+").replace(/_/g,"/");
+  while(s.length%4) s+="=";
+  return JSON.parse(decodeURIComponent(escape(atob(s))));
+}
+function buildReview(){
+  return {
+    v:1, code:state.code, name:state.name, contact:state.contact,
+    ts:new Date().toLocaleString("zh-CN",{hour12:false}),
+    p1score:state.p1Score, p1total:state.p1.length, p1rate:state.p1Rate,
+    p1:state.p1.map(function(q,qi){ return { q:q.q, opts:q.shuffled, pick:state.p1Sel[qi], correct:q.correctIdx }; }),
+    p2:state.p2.map(function(sg,si){ return { title:sg.title, artist:sg.artist, ans:state.p2Text[si]||"" }; }),
+    p3:state.p3.map(function(sg,si){ return { title:sg.title, artist:sg.artist, full:!!sg._full, segs:(state.p3Segs[si]||[]).slice().sort(function(a,b){return a.start-b.start;}) }; })
+  };
+}
+function reviewUrl(o){ return location.origin+location.pathname+"#r="+encObj(o); }
+function renderReview(d){
+  document.getElementById("rv-code").textContent=d.code||"------";
+  document.getElementById("rv-name").textContent=d.name||"—";
+  document.getElementById("rv-contact").textContent=d.contact||"—";
+  document.getElementById("rv-ts").textContent=d.ts||"—";
+  var pct=Math.round((d.p1rate||0)*100), pass=(d.p1rate||0)>=PASS_RATE;
+  document.getElementById("rv-score").textContent=(d.p1score||0)+"/"+(d.p1total||0)+" · "+pct+"%";
+  var vd=document.getElementById("rv-verdict"); vd.textContent=pass?"通过听辨硬门槛":"未通过听辨硬门槛"; vd.className="rv-badge "+(pass?"ok":"bad");
+  var body=document.getElementById("rv-body"); body.innerHTML="";
+
+  var s1=document.createElement("div"); s1.className="card";
+  s1.appendChild((function(){var k=document.createElement("span");k.className="kicker";k.textContent="Part 1 · 听辨硬门槛";return k;})());
+  s1.appendChild((function(){var h=document.createElement("h2");h.style.marginTop="6px";h.textContent="逐题作答与系统判分";return h;})());
+  var l1=document.createElement("div"); l1.className="rv-list";
+  (d.p1||[]).forEach(function(it,qi){
+    var ok=it.pick===it.correct;
+    var q=document.createElement("div"); q.className="rv-q";
+    var head=document.createElement("div"); head.className="rv-qhead";
+    var no=document.createElement("span"); no.className="rv-qno"; no.textContent=qi+1;
+    var qq=document.createElement("span"); qq.className="rv-qq"; qq.textContent=it.q;
+    var tag=document.createElement("span"); tag.className="rv-qtag "+(ok?"ok":"bad"); tag.textContent=ok?"正确":"错误";
+    head.appendChild(no); head.appendChild(qq); head.appendChild(tag); q.appendChild(head);
+    it.opts.forEach(function(op,oi){
+      var line=document.createElement("div"); line.className="rv-opt";
+      var isPick=oi===it.pick, isCor=oi===it.correct;
+      if(isCor) line.classList.add("correct");
+      if(isPick&&!isCor) line.classList.add("wrongpick");
+      var txt=OPTKEYS[oi]+". "+op;
+      if(isCor) txt+="（正确答案）";
+      if(isPick) txt+="　[候选人选择]";
+      line.textContent=txt; q.appendChild(line);
+    });
+    l1.appendChild(q);
+  });
+  s1.appendChild(l1); body.appendChild(s1);
+
+  var s2=document.createElement("div"); s2.className="card";
+  s2.appendChild((function(){var k=document.createElement("span");k.className="kicker";k.textContent="Part 2 · 整体听感判断";return k;})());
+  s2.appendChild((function(){var h=document.createElement("h2");h.style.marginTop="6px";h.textContent="歌曲整体描述（人工复核）";return h;})());
+  (d.p2||[]).forEach(function(it,si){
+    var item=document.createElement("div"); item.className="rv-song";
+    var hh=document.createElement("div"); hh.className="rv-song-h"; hh.textContent="曲目"+(si+1)+"《"+it.title+"》"+it.artist;
+    var tt=document.createElement("div"); tt.className="rv-song-t"; tt.textContent=it.ans||"（未填写）";
+    item.appendChild(hh); item.appendChild(tt); s2.appendChild(item);
+  });
+  body.appendChild(s2);
+
+  var s3=document.createElement("div"); s3.className="card";
+  s3.appendChild((function(){var k=document.createElement("span");k.className="kicker";k.textContent="Part 3 · 曲式结构分析";return k;})());
+  s3.appendChild((function(){var h=document.createElement("h2");h.style.marginTop="6px";h.textContent="结构标注（人工复核）";return h;})());
+  (d.p3||[]).forEach(function(it,si){
+    var item=document.createElement("div"); item.className="rv-song";
+    var hh=document.createElement("div"); hh.className="rv-song-h";
+    hh.textContent="曲目"+(si+1)+"《"+it.title+"》"+it.artist+(it.full?" · 完整时长":" · 60 秒片段");
+    item.appendChild(hh);
+    var segs=it.segs||[];
+    if(!segs.length){
+      var e=document.createElement("div"); e.className="rv-empty"; e.textContent="未标注段落（候选人空白提交）"; item.appendChild(e);
+    }else{
+      var tl=document.createElement("div"); tl.className="rv-timeline";
+      segs.forEach(function(sg,ki){
+        var chip=document.createElement("span"); chip.className="rv-seg";
+        var c=RV_COLORS[ki%RV_COLORS.length]; chip.style.borderColor=c; chip.style.color=c;
+        chip.textContent=sg.label+" · "+fmt(sg.start)+"–"+fmt(sg.end);
+        tl.appendChild(chip);
+      });
+      item.appendChild(tl);
+      var seq=document.createElement("div"); seq.className="rv-seq";
+      seq.textContent="结构序列："+segs.map(function(s){return s.label+"("+fmt(s.start)+"-"+fmt(s.end)+")";}).join(" → ");
+      item.appendChild(seq);
+    }
+    s3.appendChild(item);
+  });
+  body.appendChild(s3);
+  // 重置人工评定
+  var grp=document.getElementsByName("rvgrade"); for(var i=0;i<grp.length;i++) grp[i].checked=false;
+  document.getElementById("rv-note").value="";
+}
+function openReviewHash(h){
+  var m=String(h||"").match(/#r=(.+)$/);
+  if(!m) return false;
+  try{ renderReview(decObj(m[1])); show("view-review"); window.scrollTo({top:0}); return true; }
+  catch(e){ alert("答卷链接无效或已损坏。"); return false; }
+}
+
+/* ============================================================
  * 结果
  * ============================================================ */
 function showResult(){
   markDone(state.name);
+  state.review=buildReview(); state.reviewUrl=reviewUrl(state.review);
+  var rl=document.getElementById("review-link"); if(rl) rl.value=state.reviewUrl;
   var pass=state.p1Rate>=PASS_RATE, pct=Math.round(state.p1Rate*100);
   document.getElementById("final-num").textContent=pct+"%";
   var ring=document.getElementById("final-ring");
@@ -815,6 +1020,7 @@ function showResult(){
   var lines=[];
   lines.push("【音乐人力能力筛选 · 结果】");
   lines.push("测试码："+state.code);
+  lines.push("网页版答卷："+(state.reviewUrl||""));
   lines.push("姓名/编号："+state.name+(state.contact?" | 联系方式："+state.contact:""));
   lines.push("第一部分 · 听辨硬门槛（"+state.p1Score+"/"+state.p1.length+"，得分率 "+pct+"%，"+(pass?"通过":"未通过")+"）：");
   state.p1.forEach(function(q,qi){
@@ -887,10 +1093,41 @@ document.getElementById("btn-submit-resume").addEventListener("click",function()
   msg("landing-msg",true);
 });
 
-/* ===== 招聘方入口：直接打开飞书汇总表（无后端） ===== */
-document.getElementById("btn-admin").addEventListener("click",function(){
+/* ===== 复制通用 ===== */
+function copyText(txt,then){
+  var done=function(){ then&&then(); };
+  function fallback(){ try{ var ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); done(); }catch(e){} }
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done,fallback); } else fallback();
+}
+
+/* ===== 结果页：网页版答卷链接 ===== */
+document.getElementById("btn-copy-link").addEventListener("click",function(){
+  var v=document.getElementById("review-link").value; if(!v) return;
+  copyText(v,function(){ msg("link-msg",true); setTimeout(function(){ msg("link-msg",false); },2200); });
+});
+document.getElementById("btn-open-link").addEventListener("click",function(){ if(state.reviewUrl) window.open(state.reviewUrl,"_blank"); });
+
+/* ===== 首页招聘方：打开飞书汇总表 / 粘贴链接查看网页版答卷 ===== */
+document.getElementById("btn-admin-base").addEventListener("click",function(){
   window.open("https://g0iocpiqvf9.feishu.cn/base/HMi9bm2LaaJkrOsX6SCctKb6nGg","_blank");
 });
+function gotoReviewInput(){
+  var v=document.getElementById("admin-link").value.trim(); if(!v) return;
+  var hash="", hi=v.indexOf("#r=");
+  if(hi>=0) hash=v.slice(hi);
+  else if(v.indexOf("r=")===0) hash="#"+v;
+  else if(/^[A-Za-z0-9_-]+$/.test(v)) hash="#r="+v;
+  if(!hash||!openReviewHash(hash)) alert("无法识别该答卷链接，请粘贴结果页生成的完整链接（含 #r=）。");
+}
+document.getElementById("btn-admin-open-link").addEventListener("click",gotoReviewInput);
+document.getElementById("admin-link").addEventListener("keydown",function(e){ if(e.key==="Enter") gotoReviewInput(); });
+
+/* ===== 网页版答卷查看页 ===== */
+document.getElementById("btn-rv-print").addEventListener("click",function(){ window.print(); });
+document.getElementById("btn-rv-back").addEventListener("click",function(){ location.hash=""; show("view-landing"); });
+
+/* ===== 启动路由：URL 带 #r= 时直接渲染网页版答卷 ===== */
+openReviewHash(location.hash);
 
 </script>
 </body>
